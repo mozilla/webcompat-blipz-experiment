@@ -6,8 +6,10 @@
 
 /* globals browser */
 
+var gMinimumFrequencyBeforeRePrompting = 1000 * 20; // 20 seconds (for testing)
+var gSkipPrivateBrowsingTabs = true;
+
 var gDomainCheckTimestamps = {};
-var gMinimumFrequencyBeforeRePrompting = 1000 * 60;
 
 var portToPageAction = (function() {
   let port;
@@ -127,20 +129,29 @@ var TabState = (function() {
     }
 
     async submitReport() {
-      let report = this._report;
-      if (Object.keys(report).length) {
-        const {id} = await getActiveTab();
-        if (id === this._tabId) {
-          this.updateReport({});
-          return backgroundSendReport(report).catch(ex => {
-            console.error(browser.i18n.getMessage("errorSendingReport"), ex);
-            this.updateReport(report);
-            throw ex;
-          });
-        }
+      if (this._reportSubmitPromise) {
+        return this._reportSubmitPromise;
       }
 
-      return Promise.reject();
+      this._reportSubmitPromise = new Promise(async (resolve, reject) => {
+        let report = this._report;
+        const { incognito, url } = await browser.tabs.get(this._tabId);
+        if (incognito) {
+          report.incognito = incognito;
+        }
+        report.url = url;
+        this.updateReport({});
+        return backgroundSendReport(report).then(() => {
+          delete this._reportSubmitPromise;
+          resolve();
+        }).catch(error => {
+          console.error(browser.i18n.getMessage("errorSendingReport"), error);
+          this.updateReport(report);
+          delete this._reportSubmitPromise;
+          reject(error);
+        });
+      });
+      return this._reportSubmitPromise;
     }
 
     static reset(tabId) {
@@ -192,20 +203,22 @@ async function onNavigationCompleted(navDetails) {
   let { tabId } = navDetails;
   TabState.reset(tabId);
 
-  if (shouldQueryUser(navDetails)) {
+  if (await shouldQueryUser(navDetails)) {
     showPopup(tabId);
   }
 }
 
 browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
 
-function shouldQueryUser(navDetails) {
+async function shouldQueryUser(navDetails) {
   try {
     let url = new URL(navDetails.url);
     return (url.protocol === "http:" || url.protocol === "https:") &&
            (!gDomainCheckTimestamps[url.host] ||
             gDomainCheckTimestamps[url.host] <
              (Date.now() - gMinimumFrequencyBeforeRePrompting)) &&
+           (!gSkipPrivateBrowsingTabs ||
+            !(await browser.tabs.get(navDetails.tabId)).incognito) &&
            Math.random() > 0.5;
   } catch (_) {
     return false;
@@ -259,7 +272,9 @@ async function onMessage(message) {
 async function handleButtonClick(action, tabState) {
   switch (tabState.slide) {
     case "initialPrompt":
-      if (action === "yes") {
+      let userReportsProblem = action !== "yes";
+      tabState.updateReport({userReportsProblem});
+      if (!userReportsProblem) {
         tabState.submitReport();
         tabState.slide = "thankYou";
         tabState.markAsVerified();
