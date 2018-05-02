@@ -103,35 +103,37 @@ button:focus {
 .icon_question { background-image: url(icons/webcompat.svg); }
 .icon_information { background-image: url(icons/webcompat.svg); }
 
-#initialPrompt > h1:before { content: "__MSG_titleInitialPrompt__"; }
-#initialPrompt > p:before { content: "__MSG_textInitialPrompt__"; }
-#initialPrompt > button:before { content: "__MSG_buttonYes__"; }
-#initialPrompt > button+button:before { content: "__MSG_buttonNo__"; }
+#initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
+#initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
 
-#thankYou > h1:before { content: "__MSG_titleThankYou__"; }
-#thankYou > p:before { content: "__MSG_textThankYou__"; }
+#thankYou > h1::before { content: "__MSG_titleThankYou__"; }
+#thankYou > p::before { content: "__MSG_textThankYou__"; }
 
-#requestFeedback > h1:before { content: "__MSG_titleRequestFeedback__"; }
-#requestFeedback > button:before { content: "__MSG_buttonYes__"; }
-#requestFeedback > button+button:before { content: "__MSG_buttonNo__"; }
+#requestFeedback > h1::before { content: "__MSG_titleRequestFeedback__"; }
 
-#feedbackForm > h1:before { content: "__MSG_titleFeedbackForm__"; }
+#initialPrompt > button::before { content: "__MSG_buttonYes__"; }
+#requestFeedback > button::before { content: "__MSG_buttonYes__"; }
 
-button[data-action="yes"]:before { content: "__MSG_buttonYes__"; }
-button[data-action="no"]:before { content: "__MSG_buttonNo__"; }
-button[data-action="submit"]:before { content: "__MSG_buttonSubmit__"; }
-button[data-action="cancel"]:before { content: "__MSG_buttonCancel__"; }
+#initialPrompt > button+button::before { content: "__MSG_buttonNo__"; }
+#requestFeedback > button+button::before { content: "__MSG_buttonNo__"; }
+
+#feedbackForm > h1::before { content: "__MSG_titleFeedbackForm__"; }
+
+button[data-action="yes"]::before { content: "__MSG_buttonYes__"; }
+button[data-action="no"]::before { content: "__MSG_buttonNo__"; }
+button[data-action="submit"]::before { content: "__MSG_buttonSubmit__"; }
+button[data-action="cancel"]::before { content: "__MSG_buttonCancel__"; }
 
 form img {
   cursor: pointer;
 }
 
-#issueRemoveScreenshot:before {
+#issueRemoveScreenshot::before {
   content: "__MSG_buttonRemoveScreenshot__";
   background: url(icons/webcompat.svg) no-repeat;
   padding-left: 20px;
 }
-#issueTakeScreenshot:before {
+#issueTakeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/webcompat.svg) no-repeat;
   padding-left: 20px;
