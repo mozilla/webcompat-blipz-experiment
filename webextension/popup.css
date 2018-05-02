@@ -76,7 +76,7 @@ section > button {
   border-top: 1px solid #e1e1e1;
   border-radius: 0;
   width: 50%;
-  display: inline-block;
+  float: left;
   height: 3em;
 }
 section > button + button {
