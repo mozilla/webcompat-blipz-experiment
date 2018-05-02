@@ -6,6 +6,9 @@
 
 /* globals browser */
 
+var gDomainCheckTimestamps = {};
+var gMinimumFrequencyBeforeRePrompting = 1000 * 60;
+
 var portToPageAction = (function() {
   let port;
 
@@ -115,6 +118,14 @@ var TabState = (function() {
       }
     }
 
+    async markAsVerified() {
+      try {
+        let { url } = await browser.tabs.get(this._tabId);
+        let domain = new URL(url).host;
+        gDomainCheckTimestamps[domain] = Date.now();
+      } catch (_) { }
+    }
+
     async submitReport() {
       let report = this._report;
       if (Object.keys(report).length) {
@@ -122,7 +133,7 @@ var TabState = (function() {
         if (id === this._tabId) {
           this.updateReport({});
           return backgroundSendReport(report).catch(ex => {
-            console.error("Error sending report");
+            console.error(browser.i18n.getMessage("errorSendingReport"), ex);
             this.updateReport(report);
             throw ex;
           });
@@ -164,7 +175,7 @@ async function onTabChanged(info) {
   }
 }
 
-browser.webNavigation.onCompleted.addListener(onTabChanged);
+browser.tabs.onActivated.addListener(onTabChanged);
 
 async function showPopup(tabId) {
   await browser.pageAction.show(tabId);
@@ -189,7 +200,16 @@ async function onNavigationCompleted(navDetails) {
 browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
 
 function shouldQueryUser(navDetails) {
-  return Math.random() > 0.5;
+  try {
+    let url = new URL(navDetails.url);
+    return (url.protocol === "http:" || url.protocol === "https:") &&
+           (!gDomainCheckTimestamps[url.host] ||
+            gDomainCheckTimestamps[url.host] <
+             (Date.now() - gMinimumFrequencyBeforeRePrompting)) &&
+           Math.random() > 0.5;
+  } catch (_) {
+    return false;
+  }
 }
 
 async function onMessage(message) {
@@ -242,6 +262,7 @@ async function handleButtonClick(action, tabState) {
       if (action === "yes") {
         tabState.submitReport();
         tabState.slide = "thankYou";
+        tabState.markAsVerified();
       } else {
         tabState.slide = "requestFeedback";
       }
@@ -254,6 +275,7 @@ async function handleButtonClick(action, tabState) {
         tabState.submitReport();
         tabState.slide = "thankYou";
         closePopup();
+        tabState.markAsVerified();
       }
       break;
 
@@ -265,6 +287,7 @@ async function handleButtonClick(action, tabState) {
         closePopup();
         tabState.reset();
       }
+      tabState.markAsVerified();
       break;
   }
 }

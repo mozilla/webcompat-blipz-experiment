@@ -30,6 +30,7 @@
     "128": "icons/webcompat.svg"
   },
   "permissions": [
+    "tabs",
     "webNavigation",
     "<all_urls>"
   ],

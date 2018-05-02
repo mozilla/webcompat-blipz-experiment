@@ -31,6 +31,9 @@
   "errorScreenshotFail": {
     "message": "Error taking a screenshot"
   },
+  "errorSendingReport": {
+    "message": "Error sending report"
+  },
 
   "issueLabelDesktopNotMobile": {
     "message": "Desktop site instead of mobile site"
