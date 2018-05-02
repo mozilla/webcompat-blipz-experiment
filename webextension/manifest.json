@@ -1,0 +1,47 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_addonName__",
+  "default_locale": "en_US",
+  "description": "__MSG_addonDescription__",
+  "author": "__MSG_addonAuthorsList__",
+  "version": "1.0",
+  "homepage_url": "https://github.com/mozilla/webcompat-blipz-experiment",
+  "applications": {
+    "gecko": {
+      "id": "webcompat-blipz-experiment@mozilla.org",
+      "strict_min_version": "57"
+    }
+  },
+  "experiment_apis": {
+    "forceOpenPageActionPopup": {
+      "schema": "forceOpenPageActionPopup.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "forceOpenPageActionPopup.js",
+        "paths": [["experiments", "pageAction"]]
+      }
+    }
+  },
+  "icons": {
+    "16": "icons/webcompat.svg",
+    "32": "icons/webcompat.svg",
+    "48": "icons/webcompat.svg",
+    "96": "icons/webcompat.svg",
+    "128": "icons/webcompat.svg"
+  },
+  "permissions": [
+    "webNavigation",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "page_action": {
+    "browser_style": true,
+    "default_icon": "icons/webcompat.svg",
+    "default_title": "__MSG_addonName__",
+    "default_popup": "popup.html"
+  }
+}

@@ -1,0 +1,129 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+body {
+  min-width: 36em;
+  max-width: 36em;
+}
+input,
+button,
+select,
+textarea {
+  border-radius: 3px;
+  border: 1px solid #e1e1e1;
+  width: 100%;
+  background: #f1f1f1;
+  padding: 0 0.5em;
+  height: 2.5em;
+}
+input,
+button,
+select {
+  line-height: 2.5em;
+}
+textarea {
+  box-sizing: content-box;
+  width: calc(100% - 1.25em) !important;
+  padding: 0.5em;
+}
+input,
+textarea {
+  background: #fff;
+}
+button {
+  text-align: center;
+}
+section {
+  background-position: 30px 2.5em;
+  background-repeat: no-repeat;
+  padding-top: 2em;
+}
+section:not(.active) {
+  display: none;
+}
+section > h1 {
+  font-size: 1.5rem;
+  line-height: 1.5em;
+  padding-bottom: 0.5em;
+}
+section > h1,
+section > p,
+section > form {
+  padding-left: 75px;
+  padding-right: 75px;
+}
+section > p,
+section > form {
+  padding-bottom: 2em;
+}
+section > p,
+section > button {
+  font-size: 1rem;
+  line-height: 1.5em;
+}
+section > form > * {
+  display: block;
+  width: 100%;
+}
+section > button {
+  border: 0;
+  border-top: 1px solid #e1e1e1;
+  border-radius: 0;
+  width: 50%;
+  display: inline-block;
+  height: 3em;
+}
+section > button + button {
+  border-left: 1px solid #e1e1e1;
+}
+#feedbackForm select,
+#feedbackForm textarea {
+  margin-bottom: 0.5em;
+}
+button.emphasize,
+button:active,
+button:focus {
+  color: #fff;
+  background: #0260de;
+}
+
+#issueScreenshot {
+  display: block;
+}
+
+.icon_webcompat { background-image: url(icons/webcompat.svg); }
+.icon_done { background-image: url(icons/webcompat.svg); }
+.icon_question { background-image: url(icons/webcompat.svg); }
+.icon_information { background-image: url(icons/webcompat.svg); }
+
+#initialPrompt > h1:before { content: "__MSG_titleInitialPrompt__"; }
+#initialPrompt > p:before { content: "__MSG_textInitialPrompt__"; }
+#initialPrompt > button:before { content: "__MSG_buttonYes__"; }
+#initialPrompt > button+button:before { content: "__MSG_buttonNo__"; }
+
+#thankYou > h1:before { content: "__MSG_titleThankYou__"; }
+#thankYou > p:before { content: "__MSG_textThankYou__"; }
+
+#requestFeedback > h1:before { content: "__MSG_titleRequestFeedback__"; }
+#requestFeedback > button:before { content: "__MSG_buttonYes__"; }
+#requestFeedback > button+button:before { content: "__MSG_buttonNo__"; }
+
+#feedbackForm > h1:before { content: "__MSG_titleFeedbackForm__"; }
+
+button[data-action="yes"]:before { content: "__MSG_buttonYes__"; }
+button[data-action="no"]:before { content: "__MSG_buttonNo__"; }
+button[data-action="submit"]:before { content: "__MSG_buttonSubmit__"; }
+button[data-action="cancel"]:before { content: "__MSG_buttonCancel__"; }
+
+#issueScreenshot:before {
+  content: "__MSG_buttonScreenshot__";
+  background: url(icons/webcompat.svg) no-repeat;
+  padding-left: 20px;
+}
+

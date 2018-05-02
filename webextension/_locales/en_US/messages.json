@@ -1,0 +1,76 @@
+{
+  "addonName": {
+    "message": "Webcompat Blipz Experiment"
+  },
+  "addonDescription": {
+    "message": "An experiment to gather user feedback for websites broken by webcompat issues."
+  },
+  "addonAuthorsList": {
+    "message": "Thomas Wisniewski <twisniewski@mozilla.com>"
+  },
+
+  "buttonCancel": {
+    "message": "Cancel"
+  },
+  "buttonScreenshot": {
+    "message": "Provide a screenshot"
+  },
+  "buttonNo": {
+    "message": "No"
+  },
+  "buttonSubmit": {
+    "message": "Submit"
+  },
+  "buttonYes": {
+    "message": "Yes"
+  },
+
+  "errorScreenshotFail": {
+    "message": "Error taking a screenshot"
+  },
+
+  "issueLabelDesktopNotMobile": {
+    "message": "Desktop site instead of mobile site"
+  },
+  "issueLabelSiteUnusable": {
+    "message": "Site is not usable"
+  },
+  "issueLabelBrokenDesign": {
+    "message": "Design is broken"
+  },
+  "issueLabelPlaybackFailure": {
+    "message": "Video or audio doesn't play"
+  },
+  "issueLabelOther": {
+    "message": "Something else"
+  },
+
+  "placeholderIssueType": {
+    "message": "Type of issue"
+  },
+  "placeholderDescription": {
+    "message": "Description"
+  },
+
+  "titleInitialPrompt": {
+    "message": "Site working for you?"
+  },
+  "textInitialPrompt": {
+    "message": "We are currently running an experiment to gather data on websites which may have web compatibility issues."
+  },
+
+  "titleThankYou": {
+    "message": "Thank you!"
+  },
+  "textThankYou": {
+    "message": "Your feedback has been saved."
+  },
+
+  "titleRequestFeedback": {
+    "message": "Thank you. Could you provide more feedback?"
+  },
+
+  "titleFeedbackForm": {
+    "message": "Feedback information?"
+  }
+}
