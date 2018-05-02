@@ -8,9 +8,33 @@
 
 let gState = {};
 
+let portToBGScript = (function() {
+  let port;
+
+  function connect() {
+    port = browser.runtime.connect({name: "pageActionPopupPort"});
+    port.onMessage.addListener(onMessage);
+    port.onDisconnect.addListener(e => {
+      port = undefined;
+    });
+  }
+
+  connect();
+
+  async function send(message) {
+    if (port) {
+      return port.postMessage(message);
+    } else {
+      console.trace();
+      return Promise.reject("Background script has disconnected");
+    }
+  }
+
+  return {send};
+}());
+
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", handleClick);
-  browser.runtime.sendMessage({type: "popupOpened"});
 
   for (let [value, msgId] of Object.entries({
     "": "placeholderIssueType",
@@ -34,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("change", e => {
       let message = {};
       message[input.name] = input.value;
-      browser.runtime.sendMessage(message);
+      portToBGScript.send(message);
     });
   }
 
@@ -50,11 +74,7 @@ function autosizeTextArea(el) {
   });
 }
 
-window.onunload = function() {
-  browser.runtime.sendMessage({type: "popupClosed"});
-};
-
-browser.runtime.onMessage.addListener(update => {
+function onMessage(update) {
   if (update === "closePopup") {
     window.close();
     return;
@@ -84,10 +104,10 @@ browser.runtime.onMessage.addListener(update => {
   } else {
     hideScreenshot();
   }
-});
+}
 
 async function hideScreenshot() {
-  await browser.runtime.sendMessage({type: "removeScreenshot"});
+  await portToBGScript.send({type: "removeScreenshot"});
 
   let img = document.querySelector("img");
   if (img) {
@@ -107,7 +127,7 @@ function showScreenshot(dataUrl) {
   document.querySelector("form").appendChild(img);
 
   img.addEventListener("click", function() {
-    browser.runtime.sendMessage({type: "showScreenshot"});
+    portToBGScript.send({type: "showScreenshot"});
   });
 }
 
@@ -124,7 +144,7 @@ function handleClick(e) {
 
   if (e.target.id === "issueTakeScreenshot") {
     e.preventDefault();
-    browser.runtime.sendMessage({type: "requestScreenshot"});
+    portToBGScript.send({type: "requestScreenshot"});
     return;
   }
 
@@ -143,6 +163,6 @@ function handleClick(e) {
         message[field.name] = field.value;
       }
     }
-    browser.runtime.sendMessage(message);
+    portToBGScript.send(message);
   }
 }

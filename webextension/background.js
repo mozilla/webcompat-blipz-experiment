@@ -6,7 +6,36 @@
 
 /* globals browser */
 
-var gIsPopupActive = false;
+var portToPageAction = (function() {
+  let port;
+
+  browser.runtime.onConnect.addListener(_port => {
+    port = _port;
+    port.onMessage.addListener(onMessage);
+    port.onDisconnect.addListener(function() {
+      port = undefined;
+    });
+
+    TabState.get().then(tabState => {
+      tabState.maybeUpdatePopup();
+    });
+  });
+
+  async function send(message) {
+    if (port) {
+      return port.postMessage(message);
+    } else {
+      console.trace();
+      return Promise.reject("Page action is disconnected");
+    }
+  }
+
+  function isConnected() {
+    return !!port;
+  }
+
+  return {send, isConnected};
+}());
 
 var TabState = (function() {
   let TabStates = {};
@@ -18,7 +47,7 @@ var TabState = (function() {
     }
 
     async maybeUpdatePopup(onlyProperties) {
-      if (gIsPopupActive && (await getActiveTab()).id === this._tabId) {
+      if (portToPageAction.isConnected() && (await getActiveTab()).id === this._tabId) {
         let info = Object.assign({}, this._report, {
           tabId: this._tabId,
           slide: this._slide,
@@ -35,7 +64,7 @@ var TabState = (function() {
           }
         }
         if (Object.keys(update)) {
-          browser.runtime.sendMessage(update);
+          portToPageAction.send(update);
         }
       }
     }
@@ -164,7 +193,7 @@ function shouldQueryUser(navDetails) {
   return Math.random() > 0.5;
 }
 
-browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+async function onMessage(message) {
   let { tabId, type, action } = message;
 
   let tabState = await TabState.get(tabId);
@@ -177,15 +206,6 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   }
 
   switch (type) {
-    case "popupOpened":
-      gIsPopupActive = true;
-      tabState.maybeUpdatePopup();
-      break;
-
-    case "popupClosed":
-      gIsPopupActive = false;
-      break;
-
     case "removeScreenshot":
       tabState.updateReport({screenshot: undefined});
       break;
@@ -215,7 +235,7 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       handleButtonClick(action, tabState);
       break;
   }
-});
+}
 
 async function handleButtonClick(action, tabState) {
   switch (tabState.slide) {
@@ -259,7 +279,7 @@ function getActiveTab() {
 }
 
 function closePopup() {
-  if (gIsPopupActive) {
-    browser.runtime.sendMessage("closePopup");
+  if (portToPageAction.isConnected()) {
+    portToPageAction.send("closePopup");
   }
 }
