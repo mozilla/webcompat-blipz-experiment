@@ -64,47 +64,57 @@ browser.runtime.onMessage.addListener(newState => {
       section.classList.add("active");
     }
   }
+
+  if (gState.report && gState.report.screenshot) {
+    showScreenshot(gState.report.screenshot);
+  } else {
+    hideScreenshot();
+  }
 });
 
-function getScreenshot() {
-  return new Promise((resolve, reject) => {
-    try {
-      const XHTMLNS = "http://www.w3.org/1999/xhtml";
-      let x = document.documentElement.scrollLeft,
-          y = document.documentElement.scrollTop,
-          width = window.innerWidth,
-          height = window.innerHeight,
-          canvas = document.createElementNS(XHTMLNS, "canvas"),
-          ctx = canvas.getContext("2d"),
-          dpi = window.devicePixelRatio;
+async function hideScreenshot() {
+  await browser.runtime.sendMessage({type: "removeScreenshot"});
 
-      // Take screenshots in the DPI of the screen (ie retina displays).
-      canvas.width = width * dpi;
-      canvas.height = height * dpi;
-      ctx.scale(dpi, dpi);
+  let img = document.querySelector("img");
+  if (img) {
+    img.remove();
+  }
 
-      ctx.drawWindow(window, x, y, width, height, "#fff");
-      let url = canvas.toDataURL("image/png");
-      fetch(url).then(res => res.blob()).then(resolve).catch(reject);
-    } catch (ex) {
-      // drawWindow can fail depending on memory or surface size.
-      reject(ex);
-    }
+  document.querySelector("#issueTakeScreenshot").style.display = "";
+  document.querySelector("#issueRemoveScreenshot").style.display = "none";
+}
+
+function showScreenshot(dataUrl) {
+  document.querySelector("#issueTakeScreenshot").style.display = "none";
+  document.querySelector("#issueRemoveScreenshot").style.display = "";
+
+  let img = document.createElement("img");
+  img.src = dataUrl;
+  document.querySelector("form").appendChild(img);
+
+  img.addEventListener("click", function() {
+    browser.runtime.sendMessage({type: "showScreenshot"});
   });
 }
 
-function handleClick(e) {
+async function handleClick(e) {
   if (e.which !== 1) {
     return;
   }
 
-  if (e.target.id === "issueScreenshot") {
+  if (e.target.id === "issueRemoveScreenshot") {
+    hideScreenshot();
+    return;
+  }
+
+  if (e.target.id === "issueTakeScreenshot") {
     e.preventDefault();
-    getScreenshot().then(screenshot => {
-      browser.runtime.sendMessage({type: "metadata", screenshot});
-    }).catch(ex => {
+    let result = await browser.runtime.sendMessage({type: "requestScreenshot"});
+    if (result.error) {
       console.error(browser.i18n.getMessage("errorScreenshotFail"), ex);
-    });
+    } else if (result.screenshot) {
+      showScreenshot(result.screenshot);
+    }
     return;
   }
 

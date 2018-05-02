@@ -12,7 +12,10 @@
   "buttonCancel": {
     "message": "Cancel"
   },
-  "buttonScreenshot": {
+  "buttonRemoveScreenshot": {
+    "message": "Remove screenshot"
+  },
+  "buttonTakeScreenshot": {
     "message": "Provide a screenshot"
   },
   "buttonNo": {

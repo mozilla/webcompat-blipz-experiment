@@ -93,7 +93,8 @@ button:focus {
   background: #0260de;
 }
 
-#issueScreenshot {
+#issueTakeScreenshot,
+#issueRemoveScreenshot {
   display: block;
 }
 
@@ -121,8 +122,17 @@ button[data-action="no"]:before { content: "__MSG_buttonNo__"; }
 button[data-action="submit"]:before { content: "__MSG_buttonSubmit__"; }
 button[data-action="cancel"]:before { content: "__MSG_buttonCancel__"; }
 
-#issueScreenshot:before {
-  content: "__MSG_buttonScreenshot__";
+form img {
+  cursor: pointer;
+}
+
+#issueRemoveScreenshot:before {
+  content: "__MSG_buttonRemoveScreenshot__";
+  background: url(icons/webcompat.svg) no-repeat;
+  padding-left: 20px;
+}
+#issueTakeScreenshot:before {
+  content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/webcompat.svg) no-repeat;
   padding-left: 20px;
 }

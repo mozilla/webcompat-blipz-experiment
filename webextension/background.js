@@ -58,6 +58,36 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       gState.popupActive = false;
       break;
 
+    case "removeScreenshot":
+      if (gState.report) {
+        delete gState.report.screenshot;
+      }
+      break;
+
+    case "showScreenshot":
+      let url = gState.report && gState.report.screenshot;
+      if (url) {
+        browser.tabs.create({url: "about:blank"}).then(tab => {
+          browser.tabs.executeScript(tab.id, {
+            code: `window.location = "${url}"`,
+            matchAboutBlank: true,
+          });
+        });
+      }
+      break;
+
+    case "requestScreenshot":
+      browser.tabs.captureVisibleTab().then(screenshot => {
+        if (!gState.report) {
+          gState.report = {};
+        }
+        gState.report.screenshot = screenshot;
+        sendResponse({screenshot});
+      }).catch(error => {
+        sendResponse({error});
+      });
+      return true;
+
     case "action":
       handleButtonClick(action);
       break;
