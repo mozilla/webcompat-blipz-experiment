@@ -14,6 +14,11 @@ var portToPageAction = (function() {
     port.onMessage.addListener(onMessage);
     port.onDisconnect.addListener(function() {
       port = undefined;
+      TabState.get().then(tabState => {
+        if (!tabState.inProgress) {
+          browser.pageAction.hide(tabState.tabId);
+        }
+      });
     });
 
     TabState.get().then(tabState => {
@@ -71,13 +76,7 @@ var TabState = (function() {
 
     get inProgress() {
       return this._slide !== "initialPrompt" &&
-             this._slide !== "done";
-    }
-
-    done() {
-      this._slide = "done";
-      this._report = {};
-      browser.pageAction.hide(this._tabId);
+             this._slide !== "thankYou";
     }
 
     reset() {
@@ -243,7 +242,6 @@ async function handleButtonClick(action, tabState) {
       if (action === "yes") {
         tabState.submitReport();
         tabState.slide = "thankYou";
-        tabState.done();
       } else {
         tabState.slide = "requestFeedback";
       }
@@ -254,8 +252,8 @@ async function handleButtonClick(action, tabState) {
         tabState.slide = "feedbackForm";
       } else {
         tabState.submitReport();
+        tabState.slide = "thankYou";
         closePopup();
-        tabState.done();
       }
       break;
 
@@ -263,7 +261,6 @@ async function handleButtonClick(action, tabState) {
       if (action === "submit") {
         tabState.submitReport();
         tabState.slide = "thankYou";
-        tabState.done();
       } else {
         closePopup();
         tabState.reset();
