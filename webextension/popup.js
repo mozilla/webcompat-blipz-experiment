@@ -28,8 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
     "[name=issueType]": "placeholderIssueType",
     "[name=issueDescription]": "placeholderDescription",
   })) {
-    document.querySelector(selector).placeholder =
-      browser.i18n.getMessage(msgId);
+    let input = document.querySelector(selector);
+    input.placeholder = browser.i18n.getMessage(msgId);
+
+    input.addEventListener("change", e => {
+      let message = {};
+      message[input.name] = input.value;
+      browser.runtime.sendMessage(message);
+    });
   }
 
   autosizeTextArea(document.querySelector("[name=issueDescription]"));
@@ -48,25 +54,33 @@ window.onunload = function() {
   browser.runtime.sendMessage({type: "popupClosed"});
 };
 
-browser.runtime.onMessage.addListener(newState => {
-  if (newState === "closePopup") {
+browser.runtime.onMessage.addListener(update => {
+  if (update === "closePopup") {
     window.close();
     return;
   }
 
-  gState = newState;
-  let { activeSlide } = newState;
-  document.documentElement.setAttribute("data-slide", activeSlide);
-  for (let section of document.querySelectorAll("section")) {
-    if (section.id !== activeSlide) {
-      section.classList.remove("active");
-    } else {
-      section.classList.add("active");
+  Object.assign(gState, update);
+
+  if (update.slide) {
+    document.documentElement.setAttribute("data-slide", update.slide);
+    for (let section of document.querySelectorAll("section")) {
+      if (section.id !== update.slide) {
+        section.classList.remove("active");
+      } else {
+        section.classList.add("active");
+      }
     }
   }
 
-  if (gState.report && gState.report.screenshot) {
-    showScreenshot(gState.report.screenshot);
+  for (let name of ["issueType", "issueDescription"]) {
+    if (gState[name]) {
+      document.querySelector(`[name=${name}]`).value = gState[name];
+    }
+  }
+
+  if (gState.screenshot) {
+    showScreenshot(gState.screenshot);
   } else {
     hideScreenshot();
   }
@@ -97,24 +111,20 @@ function showScreenshot(dataUrl) {
   });
 }
 
-async function handleClick(e) {
+function handleClick(e) {
   if (e.which !== 1) {
     return;
   }
 
   if (e.target.id === "issueRemoveScreenshot") {
+    e.preventDefault();
     hideScreenshot();
     return;
   }
 
   if (e.target.id === "issueTakeScreenshot") {
     e.preventDefault();
-    let result = await browser.runtime.sendMessage({type: "requestScreenshot"});
-    if (result.error) {
-      console.error(browser.i18n.getMessage("errorScreenshotFail"), ex);
-    } else if (result.screenshot) {
-      showScreenshot(result.screenshot);
-    }
+    browser.runtime.sendMessage({type: "requestScreenshot"});
     return;
   }
 

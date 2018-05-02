@@ -6,70 +6,196 @@
 
 /* globals browser */
 
-var gState = {};
+var gIsPopupActive = false;
 
-resetState();
+var TabState = (function() {
+  let TabStates = {};
 
-function resetState() {
-  gState = {
-    activeSlide: "initialPrompt",
-    popupActive: gState.popupActive,
-  };
+  return class TabState {
+    constructor(tabId) {
+      this._tabId = tabId;
+      this.reset();
+    }
+
+    async maybeUpdatePopup(onlyProperties) {
+      if (gIsPopupActive && (await getActiveTab()).id === this._tabId) {
+        let info = Object.assign({}, this._report, {
+          tabId: this._tabId,
+          slide: this._slide,
+        });
+        let update;
+        if (!onlyProperties) {
+          update = info;
+        } else {
+          update = {};
+          for (let [name, value] of Object.entries(info)) {
+            if (onlyProperties.indexOf(name) >= 0) {
+              update[name] = value;
+            }
+          }
+        }
+        if (Object.keys(update)) {
+          browser.runtime.sendMessage(update);
+        }
+      }
+    }
+
+    get inProgress() {
+      return this._slide !== "initialPrompt" &&
+             this._slide !== "done";
+    }
+
+    done() {
+      this._slide = "done";
+      this._report = {};
+      browser.pageAction.hide(this._tabId);
+    }
+
+    reset() {
+      this._slide = "initialPrompt";
+      this._report = {};
+    }
+
+    get tabId() {
+      return this._tabId;
+    }
+
+    get slide() {
+      return this._slide;
+    }
+
+    set slide(name) {
+      this._slide = name;
+      this.maybeUpdatePopup(["slide"]);
+    }
+
+    get screenshot() {
+      return this._report.screenshot;
+    }
+
+    updateReport(data) {
+      if (Object.keys(data).length) {
+        for (let [name, value] of Object.entries(data)) {
+          if (value === undefined) {
+            delete this._report[name];
+          } else {
+            this._report[name] = value;
+          }
+        }
+      } else {
+        this._report = {};
+      }
+    }
+
+    async submitReport() {
+      let report = this._report;
+      if (Object.keys(report).length) {
+        const {id} = await getActiveTab();
+        if (id === this._tabId) {
+          this.updateReport({});
+          return backgroundSendReport(report).catch(ex => {
+            console.error("Error sending report");
+            this.updateReport(report);
+            throw ex;
+          });
+        }
+      }
+
+      return Promise.reject();
+    }
+
+    static reset(tabId) {
+      delete TabStates[tabId];
+    }
+
+    static async get(tabId) {
+      if (!tabId) {
+        tabId = (await getActiveTab()).id;
+      }
+      if (!TabStates[tabId]) {
+        TabStates[tabId] = new TabState(tabId);
+      }
+      return TabStates[tabId];
+    }
+  }
+}());
+
+function backgroundSendReport(report) {
+  console.info("Would submit this report: ", report);
+  return Promise.resolve();
+}
+
+async function onTabChanged(info) {
+  let { tabId } = info;
+  let tabState = TabState.get(tabId);
+  if (!tabState.inProgress) {
+    closePopup();
+  } else {
+    await showPopup(tabId);
+    tabState.maybeUpdatePopup();
+  }
+}
+
+browser.webNavigation.onCompleted.addListener(onTabChanged);
+
+async function showPopup(tabId) {
+  await browser.pageAction.show(tabId);
+
+  return new Promise(resolve => {
+    requestAnimationFrame(async function() {
+      await browser.experiments.pageAction.forceOpenPopup();
+      resolve();
+    });
+  });
 }
 
 async function onNavigationCompleted(navDetails) {
-  resetState();
+  let { tabId } = navDetails;
+  TabState.reset(tabId);
 
   if (shouldQueryUser(navDetails)) {
-    await browser.pageAction.show(navDetails.tabId);
-    requestAnimationFrame(function() {
-      browser.experiments.pageAction.forceOpenPopup();
-    });
+    showPopup(tabId);
   }
 }
+
+browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
 
 function shouldQueryUser(navDetails) {
   return Math.random() > 0.5;
 }
 
-browser.webNavigation.onCompleted.addListener(
-  onNavigationCompleted
-);
+browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  let { tabId, type, action } = message;
 
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  let { type, action } = message;
+  let tabState = await TabState.get(tabId);
 
-  for (let [key, value] of Object.entries(message)) {
-    if (key !== "type" && key !== "action") {
-      if (!gState.report) {
-        gState.report = {};
-      }
-      gState.report[key] = value;
-    }
+  delete message.tabId;
+  delete message.type;
+  delete message.action;
+  if (Object.keys(message).length) {
+    tabState.updateReport(message);
   }
 
   switch (type) {
     case "popupOpened":
-      gState.popupActive = true;
-      sendStateToPopup();
+      gIsPopupActive = true;
+      tabState.maybeUpdatePopup();
       break;
 
     case "popupClosed":
-      gState.popupActive = false;
+      gIsPopupActive = false;
       break;
 
     case "removeScreenshot":
-      if (gState.report) {
-        delete gState.report.screenshot;
-      }
+      tabState.updateReport({screenshot: undefined});
       break;
 
     case "showScreenshot":
-      let url = gState.report && gState.report.screenshot;
-      if (url) {
+      let imgUrl = tabState.screenshot;
+      if (imgUrl) {
         browser.tabs.create({url: "about:blank"}).then(tab => {
           browser.tabs.executeScript(tab.id, {
-            code: `window.location = "${url}"`,
+            code: `window.location = "${imgUrl}"`,
             matchAboutBlank: true,
           });
         });
@@ -78,79 +204,62 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case "requestScreenshot":
       browser.tabs.captureVisibleTab().then(screenshot => {
-        if (!gState.report) {
-          gState.report = {};
-        }
-        gState.report.screenshot = screenshot;
-        sendResponse({screenshot});
+        tabState.updateReport({screenshot});
+        tabState.maybeUpdatePopup(["screenshot"]);
       }).catch(error => {
-        sendResponse({error});
+        console.error(browser.i18n.getMessage("errorScreenshotFail"), error);
       });
       return true;
 
     case "action":
-      handleButtonClick(action);
+      handleButtonClick(action, tabState);
       break;
   }
 });
 
-function backgroundSubmitReport() {
-  let report = gState.report;
-  if (!report) {
-    return;
-  }
-  delete gState.report;
-
-  console.info("Would submit this report: ", report);
-}
-
-function handleButtonClick(action) {
-  switch (gState.activeSlide) {
+async function handleButtonClick(action, tabState) {
+  switch (tabState.slide) {
     case "initialPrompt":
       if (action === "yes") {
-        changeActiveSlide("thankYou");
-        backgroundSubmitReport();
-        resetState();
+        tabState.submitReport();
+        tabState.slide = "thankYou";
+        tabState.done();
       } else {
-        changeActiveSlide("requestFeedback");
+        tabState.slide = "requestFeedback";
       }
       break;
 
     case "requestFeedback":
       if (action === "yes") {
-        changeActiveSlide("feedbackForm");
+        tabState.slide = "feedbackForm";
       } else {
-        backgroundSubmitReport();
+        tabState.submitReport();
         closePopup();
-        resetState();
+        tabState.done();
       }
       break;
 
     case "feedbackForm":
       if (action === "submit") {
-        changeActiveSlide("thankYou");
-        backgroundSubmitReport();
+        tabState.submitReport();
+        tabState.slide = "thankYou";
+        tabState.done();
       } else {
         closePopup();
+        tabState.reset();
       }
-      resetState();
       break;
   }
 }
 
-function changeActiveSlide(slide) {
-  gState.activeSlide = slide;
-  sendStateToPopup();
-}
-
-function sendStateToPopup() {
-  if (gState.popupActive) {
-    browser.runtime.sendMessage(gState);
-  }
+function getActiveTab() {
+  return browser.tabs.query({active: true, lastFocusedWindow: true}).then(tabs => {
+    return tabs[0];
+  });
 }
 
 function closePopup() {
-  if (gState.popupActive) {
+  if (gIsPopupActive) {
     browser.runtime.sendMessage("closePopup");
   }
 }
