@@ -57,7 +57,7 @@ var TabState = (function() {
     }
 
     async maybeUpdatePopup(onlyProperties) {
-      if (portToPageAction.isConnected() && (await getActiveTab()).id === this._tabId) {
+      if (portToPageAction.isConnected() && ((await getActiveTab()) || {}).id === this._tabId) {
         let info = Object.assign({}, this._report, {
           tabId: this._tabId,
           slide: this._slide,
@@ -161,6 +161,9 @@ var TabState = (function() {
     static async get(tabId) {
       if (!tabId) {
         tabId = (await getActiveTab()).id;
+        if (!tabId) {
+          return undefined;
+        }
       }
       if (!TabStates[tabId]) {
         TabStates[tabId] = new TabState(tabId);
