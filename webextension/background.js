@@ -202,9 +202,18 @@ async function showPopup(tabId) {
   });*/
 }
 
+let gCurrentTabUrl;
+
 async function onNavigationCompleted(navDetails) {
-  const { tabId } = navDetails;
+  const { url, tabId } = navDetails;
+
+  if (url && url === gCurrentTabUrl) {
+    browser.pageAction.show(tabId);
+    return;
+  }
+
   TabState.reset(tabId);
+  gCurrentTabUrl = url;
 
   if (await shouldQueryUser(navDetails)) {
     showPopup(tabId);
