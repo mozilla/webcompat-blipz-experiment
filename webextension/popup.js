@@ -6,9 +6,9 @@
 
 /* globals browser */
 
-let gState = {};
+const gState = {};
 
-let portToBGScript = (function() {
+const portToBGScript = (function() {
   let port;
 
   function connect() {
@@ -36,7 +36,7 @@ let portToBGScript = (function() {
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", handleClick);
 
-  for (let [value, msgId] of Object.entries({
+  for (const [value, msgId] of Object.entries({
     "": "placeholderIssueType",
     "desktopNotMobile": "issueLabelDesktopNotMobile",
     "siteUnusable": "issueLabelSiteUnusable",
@@ -48,15 +48,15 @@ document.addEventListener("DOMContentLoaded", () => {
       browser.i18n.getMessage(msgId);
   }
 
-  for (let [selector, msgId] of Object.entries({
+  for (const [selector, msgId] of Object.entries({
     "[name=issueType]": "placeholderIssueType",
     "[name=issueDescription]": "placeholderDescription",
   })) {
-    let input = document.querySelector(selector);
+    const input = document.querySelector(selector);
     input.placeholder = browser.i18n.getMessage(msgId);
 
     input.addEventListener("change", e => {
-      let message = {};
+      const message = {};
       message[input.name] = input.value;
       portToBGScript.send(message);
     });
@@ -84,7 +84,7 @@ function onMessage(update) {
 
   if (update.slide) {
     document.documentElement.setAttribute("data-slide", update.slide);
-    for (let section of document.querySelectorAll("section")) {
+    for (const section of document.querySelectorAll("section")) {
       if (section.id !== update.slide) {
         section.classList.remove("active");
       } else {
@@ -93,7 +93,7 @@ function onMessage(update) {
     }
   }
 
-  for (let name of ["issueType", "issueDescription"]) {
+  for (const name of ["issueType", "issueDescription"]) {
     if (gState[name]) {
       document.querySelector(`[name=${name}]`).value = gState[name];
     }
@@ -109,7 +109,7 @@ function onMessage(update) {
 async function hideScreenshot() {
   await portToBGScript.send({type: "removeScreenshot"});
 
-  let img = document.querySelector("img");
+  const img = document.querySelector("img");
   if (img) {
     img.remove();
   }
@@ -122,7 +122,7 @@ function showScreenshot(dataUrl) {
   document.querySelector("#issueTakeScreenshot").style.display = "none";
   document.querySelector("#issueRemoveScreenshot").style.display = "";
 
-  let img = document.createElement("img");
+  const img = document.createElement("img");
   img.src = dataUrl;
   document.querySelector("form").appendChild(img);
 
@@ -150,16 +150,16 @@ function handleClick(e) {
 
   if (e.target.nodeName === "BUTTON") {
     e.preventDefault();
-    let action = e.target.getAttribute("data-action");
-    let message = {type: "action", action};
+    const action = e.target.getAttribute("data-action");
+    const message = {type: "action", action};
     if (action === "submit") {
-      let form = document.querySelector("form");
+      const form = document.querySelector("form");
       if (!form.checkValidity()) {
         // force the first invalid element to be highlighted.
         form.querySelector(":invalid").value = "";
         return;
       }
-      for (let field of form.querySelectorAll("[name]")) {
+      for (const field of form.querySelectorAll("[name]")) {
         message[field.name] = field.value;
       }
     }

@@ -6,12 +6,12 @@
 
 /* globals browser */
 
-var gMinimumFrequencyBeforeRePrompting = 1000 * 20; // 20 seconds (for testing)
-var gSkipPrivateBrowsingTabs = true;
+const gMinimumFrequencyBeforeRePrompting = 1000 * 20; // 20 seconds (for testing)
+const gSkipPrivateBrowsingTabs = true;
 
-var gDomainCheckTimestamps = {};
+let gDomainCheckTimestamps = {};
 
-var portToPageAction = (function() {
+const portToPageAction = (function() {
   let port;
 
   browser.runtime.onConnect.addListener(_port => {
@@ -47,8 +47,8 @@ var portToPageAction = (function() {
   return {send, isConnected};
 }());
 
-var TabState = (function() {
-  let TabStates = {};
+const TabState = (function() {
+  const TabStates = {};
 
   return class TabState {
     constructor(tabId) {
@@ -58,7 +58,7 @@ var TabState = (function() {
 
     async maybeUpdatePopup(onlyProperties) {
       if (portToPageAction.isConnected() && ((await getActiveTab()) || {}).id === this._tabId) {
-        let info = Object.assign({}, this._report, {
+        const info = Object.assign({}, this._report, {
           tabId: this._tabId,
           slide: this._slide,
         });
@@ -67,8 +67,8 @@ var TabState = (function() {
           update = info;
         } else {
           update = {};
-          for (let [name, value] of Object.entries(info)) {
-            if (onlyProperties.indexOf(name) >= 0) {
+          for (const [name, value] of Object.entries(info)) {
+            if (onlyProperties.includes(name)) {
               update[name] = value;
             }
           }
@@ -108,7 +108,7 @@ var TabState = (function() {
 
     updateReport(data) {
       if (Object.keys(data).length) {
-        for (let [name, value] of Object.entries(data)) {
+        for (const [name, value] of Object.entries(data)) {
           if (value === undefined) {
             delete this._report[name];
           } else {
@@ -122,8 +122,8 @@ var TabState = (function() {
 
     async markAsVerified() {
       try {
-        let { url } = await browser.tabs.get(this._tabId);
-        let domain = new URL(url).host;
+        const { url } = await browser.tabs.get(this._tabId);
+        const domain = new URL(url).host;
         gDomainCheckTimestamps[domain] = Date.now();
       } catch (_) { }
     }
@@ -179,8 +179,8 @@ function backgroundSendReport(report) {
 }
 
 async function onTabChanged(info) {
-  let { tabId } = info;
-  let tabState = TabState.get(tabId);
+  const { tabId } = info;
+  const tabState = TabState.get(tabId);
   if (!tabState.inProgress) {
     closePopup();
   } else {
@@ -203,7 +203,7 @@ async function showPopup(tabId) {
 }
 
 async function onNavigationCompleted(navDetails) {
-  let { tabId } = navDetails;
+  const { tabId } = navDetails;
   TabState.reset(tabId);
 
   if (await shouldQueryUser(navDetails)) {
@@ -215,7 +215,7 @@ browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
 
 async function shouldQueryUser(navDetails) {
   try {
-    let url = new URL(navDetails.url);
+    const url = new URL(navDetails.url);
     return (url.protocol === "http:" || url.protocol === "https:") &&
            (!gDomainCheckTimestamps[url.host] ||
             gDomainCheckTimestamps[url.host] <
@@ -229,9 +229,9 @@ async function shouldQueryUser(navDetails) {
 }
 
 async function onMessage(message) {
-  let { tabId, type, action } = message;
+  const { tabId, type, action } = message;
 
-  let tabState = await TabState.get(tabId);
+  const tabState = await TabState.get(tabId);
 
   delete message.tabId;
   delete message.type;
@@ -241,12 +241,12 @@ async function onMessage(message) {
   }
 
   switch (type) {
-    case "removeScreenshot":
+    case "removeScreenshot": {
       tabState.updateReport({screenshot: undefined});
       break;
-
-    case "showScreenshot":
-      let imgUrl = tabState.screenshot;
+    }
+    case "showScreenshot": {
+      const imgUrl = tabState.screenshot;
       if (imgUrl) {
         browser.tabs.create({url: "about:blank"}).then(tab => {
           browser.tabs.executeScript(tab.id, {
@@ -256,8 +256,8 @@ async function onMessage(message) {
         });
       }
       break;
-
-    case "requestScreenshot":
+    }
+    case "requestScreenshot": {
       browser.tabs.captureVisibleTab().then(screenshot => {
         tabState.updateReport({screenshot});
         tabState.maybeUpdatePopup(["screenshot"]);
@@ -265,17 +265,18 @@ async function onMessage(message) {
         console.error(browser.i18n.getMessage("errorScreenshotFail"), error);
       });
       return true;
-
-    case "action":
+    }
+    case "action": {
       handleButtonClick(action, tabState);
       break;
+    }
   }
 }
 
 async function handleButtonClick(action, tabState) {
   switch (tabState.slide) {
-    case "initialPrompt":
-      let userReportsProblem = action !== "yes";
+    case "initialPrompt": {
+      const userReportsProblem = action !== "yes";
       tabState.updateReport({userReportsProblem});
       if (!userReportsProblem) {
         tabState.submitReport();
@@ -285,8 +286,8 @@ async function handleButtonClick(action, tabState) {
         tabState.slide = "requestFeedback";
       }
       break;
-
-    case "requestFeedback":
+    }
+    case "requestFeedback": {
       if (action === "yes") {
         tabState.slide = "feedbackForm";
       } else {
@@ -296,8 +297,8 @@ async function handleButtonClick(action, tabState) {
         tabState.markAsVerified();
       }
       break;
-
-    case "feedbackForm":
+    }
+    case "feedbackForm": {
       if (action === "submit") {
         tabState.submitReport();
         tabState.slide = "thankYou";
@@ -307,6 +308,7 @@ async function handleButtonClick(action, tabState) {
       }
       tabState.markAsVerified();
       break;
+    }
   }
 }
 
