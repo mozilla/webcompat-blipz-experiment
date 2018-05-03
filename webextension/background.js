@@ -73,7 +73,7 @@ var TabState = (function() {
             }
           }
         }
-        if (Object.keys(update)) {
+        if (Object.keys(update).length) {
           portToPageAction.send(update);
         }
       }
