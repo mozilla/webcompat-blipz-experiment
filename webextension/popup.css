@@ -40,7 +40,7 @@ button {
   text-align: center;
 }
 section {
-  background-position: 30px 2.5em;
+  background-position: 24px 2.5em;
   background-repeat: no-repeat;
   padding-top: 2em;
 }
@@ -99,9 +99,9 @@ button:focus {
 }
 
 .icon_webcompat { background-image: url(icons/webcompat.svg); }
-.icon_done { background-image: url(icons/webcompat.svg); }
-.icon_question { background-image: url(icons/webcompat.svg); }
-.icon_information { background-image: url(icons/webcompat.svg); }
+.icon_done { background-image: url(icons/done.svg); }
+.icon_question { background-image: url(icons/help.svg); }
+.icon_information { background-image: url(icons/info.svg); }
 
 #initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
 #initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
