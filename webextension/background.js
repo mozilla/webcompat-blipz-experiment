@@ -194,12 +194,12 @@ browser.tabs.onActivated.addListener(onTabChanged);
 async function showPopup(tabId) {
   await browser.pageAction.show(tabId);
 
-  return new Promise(resolve => {
+  /*return new Promise(resolve => {
     requestAnimationFrame(async function() {
       await browser.experiments.pageAction.forceOpenPopup();
       resolve();
     });
-  });
+  });*/
 }
 
 async function onNavigationCompleted(navDetails) {
