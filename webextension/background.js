@@ -9,7 +9,7 @@
 const gMinimumFrequencyBeforeRePrompting = 1000 * 20; // 20 seconds (for testing)
 const gSkipPrivateBrowsingTabs = true;
 
-let gDomainCheckTimestamps = {};
+const gDomainCheckTimestamps = {};
 
 const portToPageAction = (function() {
   let port;
@@ -34,10 +34,9 @@ const portToPageAction = (function() {
   async function send(message) {
     if (port) {
       return port.postMessage(message);
-    } else {
-      console.trace();
-      return Promise.reject("Page action is disconnected");
     }
+    console.trace();
+    return Promise.reject("Page action is disconnected");
   }
 
   function isConnected() {
@@ -134,7 +133,7 @@ const TabState = (function() {
       }
 
       this._reportSubmitPromise = new Promise(async (resolve, reject) => {
-        let report = this._report;
+        const report = this._report;
         const { incognito, url } = await browser.tabs.get(this._tabId);
         if (incognito) {
           report.incognito = incognito;
@@ -170,7 +169,7 @@ const TabState = (function() {
       }
       return TabStates[tabId];
     }
-  }
+  };
 }());
 
 function backgroundSendReport(report) {
@@ -194,12 +193,12 @@ browser.tabs.onActivated.addListener(onTabChanged);
 async function showPopup(tabId) {
   await browser.pageAction.show(tabId);
 
-  /*return new Promise(resolve => {
-    requestAnimationFrame(async function() {
-      await browser.experiments.pageAction.forceOpenPopup();
-      resolve();
-    });
-  });*/
+  /* return new Promise(resolve => {
+     requestAnimationFrame(async function() {
+       await browser.experiments.pageAction.forceOpenPopup();
+       resolve();
+     });
+   });*/
 }
 
 let gCurrentTabUrl;
@@ -280,6 +279,8 @@ async function onMessage(message) {
       break;
     }
   }
+
+  return undefined;
 }
 
 async function handleButtonClick(action, tabState) {

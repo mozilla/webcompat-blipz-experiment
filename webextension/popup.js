@@ -24,10 +24,9 @@ const portToBGScript = (function() {
   async function send(message) {
     if (port) {
       return port.postMessage(message);
-    } else {
-      console.trace();
-      return Promise.reject("Background script has disconnected");
     }
+    console.trace();
+    return Promise.reject("Background script has disconnected");
   }
 
   return {send};
