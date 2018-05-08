@@ -27,8 +27,8 @@
     "firefox": "web-ext run",
     "lint": "npm-run-all lint:*",
     "lint:addon": "web-ext lint",
-    "lint:css": "stylelint webextension/**/*.css",
-    "lint:html": "htmllint webextension/*.html",
+    "lint:css": "stylelint docs/*.css webextension/**/*.css",
+    "lint:html": "htmllint docs/*.html webextension/*.html",
     "lint:js": "DEBUG=eslint:cli-engine eslint webextension --ext=js,jsm,json",
     "pretest": "npm run lint",
     "test": "echo \"Error: no test specified\" && exit 0"
