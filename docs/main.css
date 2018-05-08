@@ -1,0 +1,147 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: "Helvetica Neue", Helvetica, Arial-Unicode, Arial, sans-serif;
+  font-size: 1rem;
+  min-width: 100%;
+  min-height: 100%;
+  background-attachment: fixed;
+  background-image: radial-gradient(circle at 50% 45%, #ed2a3f 0%, #7e1391 90%);
+}
+
+body {
+  color: #fff;
+  text-align: center;
+  padding: 13% 0.5em 0 0.5em;
+}
+
+body > * {
+  position: relative;
+  z-index: 2;
+}
+
+#logo {
+  height: 20vh;
+}
+
+h1 {
+  font-size: 3em;
+  font-weight: normal;
+  line-height: 1.1em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+p {
+  font-size: 1.1em;
+  line-height: 1.4em;
+  margin-top: 1em;
+  margin-bottom: 1.25em;
+}
+
+p > img {
+  height: 1.3em;
+  position: relative;
+  top: 0.25em;
+}
+
+@media all and (max-width: 46em) {
+  br {
+    display: none;
+  }
+}
+
+.starburst {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.starburst > ul {
+  list-style: none none;
+  position: absolute;
+  left: -50%;
+  top: -33%;
+  transform: scale(1, 0.4);
+  width: 200%;
+  height: 200%;
+  filter: blur(1px);
+}
+
+.starburst > ul > li {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background-image: radial-gradient(ellipse at center, #d33150 0%, transparent 25%);
+  clip-path: polygon(50% 50%, 100% 40%, 100% 60%);
+  transform-origin: 50% 50%;
+}
+
+.starburst > ul > :nth-child(1) {
+  transform: rotate(5deg);
+}
+
+.starburst > ul > :nth-child(2) {
+  transform: rotate(35deg);
+}
+
+.starburst > ul > :nth-child(3) {
+  transform: rotate(60deg);
+}
+
+.starburst > ul > :nth-child(4) {
+  transform: rotate(77deg);
+  clip-path: polygon(50% 50%, 100% 47%, 100% 53%);
+}
+
+.starburst > ul > :nth-child(5) {
+  transform: rotate(95deg);
+}
+
+.starburst > ul > :nth-child(6) {
+  transform: rotate(120deg);
+}
+
+.starburst > ul > :nth-child(7) {
+  transform: rotate(145deg);
+}
+
+.starburst > ul > :nth-child(8) {
+  transform: rotate(175deg);
+}
+
+.starburst > ul > :nth-child(9) {
+  transform: rotate(205deg);
+}
+
+.starburst > ul > :nth-child(10) {
+  transform: rotate(235deg);
+}
+
+.starburst > ul > :nth-child(11) {
+  transform: rotate(260deg);
+}
+
+.starburst > ul > :nth-child(12) {
+  transform: rotate(280deg);
+}
+
+.starburst > ul > :nth-child(13) {
+  transform: rotate(305deg);
+}
+
+.starburst > ul > :nth-child(14) {
+  transform: rotate(330deg);
+}
