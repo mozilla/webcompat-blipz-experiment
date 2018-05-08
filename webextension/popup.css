@@ -98,7 +98,6 @@ button:focus {
   display: block;
 }
 
-.icon_webcompat { background-image: url(icons/webcompat.svg); }
 .icon_done { background-image: url(icons/done.svg); }
 .icon_question { background-image: url(icons/help.svg); }
 .icon_information { background-image: url(icons/info.svg); }
@@ -130,12 +129,12 @@ form img {
 
 #issueRemoveScreenshot::before {
   content: "__MSG_buttonRemoveScreenshot__";
-  background: url(icons/webcompat.svg) no-repeat;
+  background: url(icons/broken_page.svg) no-repeat;
   padding-left: 20px;
 }
 #issueTakeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
-  background: url(icons/webcompat.svg) no-repeat;
+  background: url(icons/broken_page.svg) no-repeat;
   padding-left: 20px;
 }
 

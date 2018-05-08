@@ -22,11 +22,11 @@
     }
   },
   "icons": {
-    "16": "icons/webcompat.svg",
-    "32": "icons/webcompat.svg",
-    "48": "icons/webcompat.svg",
-    "96": "icons/webcompat.svg",
-    "128": "icons/webcompat.svg"
+    "16": "icons/broken_page.svg",
+    "32": "icons/broken_page.svg",
+    "48": "icons/broken_page.svg",
+    "96": "icons/broken_page.svg",
+    "128": "icons/broken_page.svg"
   },
   "permissions": [
     "tabs",
@@ -40,7 +40,7 @@
   },
   "page_action": {
     "browser_style": true,
-    "default_icon": "icons/webcompat.svg",
+    "default_icon": "icons/broken_page.svg",
     "default_title": "__MSG_addonName__",
     "default_popup": "popup.html"
   }

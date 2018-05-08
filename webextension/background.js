@@ -11,6 +11,12 @@ const gSkipPrivateBrowsingTabs = true;
 
 const gDomainCheckTimestamps = {};
 
+async function setPageActionIcon(tabId, active) {
+  const path = active ? "icons/broken_page_active.svg"
+                      : "icons/broken_page.svg";
+  await browser.pageAction.setIcon({tabId, path});
+}
+
 const portToPageAction = (function() {
   let port;
 
@@ -20,9 +26,7 @@ const portToPageAction = (function() {
     port.onDisconnect.addListener(function() {
       port = undefined;
       TabState.get().then(tabState => {
-        if (!tabState.inProgress) {
-          browser.pageAction.hide(tabState.tabId);
-        }
+        setPageActionIcon(tabState.tabId, tabState.inProgress);
       });
     });
 
@@ -98,6 +102,7 @@ const TabState = (function() {
 
     set slide(name) {
       this._slide = name;
+      setPageActionIcon(this._tabId, this.inProgress);
       this.maybeUpdatePopup(["slide"]);
     }
 
@@ -121,6 +126,7 @@ const TabState = (function() {
 
     async markAsVerified() {
       try {
+        await setPageActionIcon(this._tabId, false);
         const { url } = await browser.tabs.get(this._tabId);
         const domain = new URL(url).host;
         gDomainCheckTimestamps[domain] = Date.now();
@@ -179,10 +185,9 @@ function backgroundSendReport(report) {
 
 async function onTabChanged(info) {
   const { tabId } = info;
-  const tabState = TabState.get(tabId);
-  if (!tabState.inProgress) {
-    closePopup();
-  } else {
+  const tabState = await TabState.get(tabId);
+  await setPageActionIcon(tabId, tabState.inProgress);
+  if (tabState.inProgress) {
     await showPopup(tabId);
     tabState.maybeUpdatePopup();
   }
@@ -207,6 +212,8 @@ async function onNavigationCompleted(navDetails) {
   const { url, tabId } = navDetails;
 
   if (url && url === gCurrentTabUrl) {
+    const tabState = await TabState.get(tabId);
+    await setPageActionIcon(tabId, tabState.inProgress);
     browser.pageAction.show(tabId);
     return;
   }
@@ -215,6 +222,7 @@ async function onNavigationCompleted(navDetails) {
   gCurrentTabUrl = url;
 
   if (await shouldQueryUser(navDetails)) {
+    await setPageActionIcon(tabId, true);
     showPopup(tabId);
   }
 }
