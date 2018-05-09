@@ -6,10 +6,14 @@
 
 /* globals browser */
 
+const gURLThankYou = "https://mozilla.github.io/webcompat-blipz-experiment/thanks.html";
+
 const gMinimumFrequencyBeforeRePrompting = 1000 * 20; // 20 seconds (for testing)
 const gSkipPrivateBrowsingTabs = true;
 
 const gDomainCheckTimestamps = {};
+
+let gNeverShowAgain = false;
 
 async function setPageActionIcon(tabId, active) {
   const path = active ? "icons/broken_page_active.svg"
@@ -84,12 +88,13 @@ const TabState = (function() {
 
     get inProgress() {
       return this._slide !== "initialPrompt" &&
+             this._slide !== "thankYouFeedback" &&
              this._slide !== "thankYou";
     }
 
     reset() {
       this._slide = "initialPrompt";
-      this._report = {};
+      this._report = {includeURL: true};
     }
 
     get tabId() {
@@ -141,10 +146,15 @@ const TabState = (function() {
       this._reportSubmitPromise = new Promise(async (resolve, reject) => {
         const report = this._report;
         const { incognito, url } = await browser.tabs.get(this._tabId);
-        if (incognito) {
+        if (incognito !== undefined) {
           report.incognito = incognito;
         }
-        report.url = url;
+        if (report.includeURL !== undefined) {
+          if (report.includeURL) {
+            report.url = url;
+          }
+          delete report.includeURL;
+        }
         this.updateReport({});
         return backgroundSendReport(report).then(() => {
           delete this._reportSubmitPromise;
@@ -157,6 +167,12 @@ const TabState = (function() {
         });
       });
       return this._reportSubmitPromise;
+    }
+
+    static hidePageActions() {
+      for (const tab of Object.values(TabStates)) {
+        browser.pageAction.hide(tab._tabId);
+      }
     }
 
     static reset(tabId) {
@@ -193,8 +209,6 @@ async function onTabChanged(info) {
   }
 }
 
-browser.tabs.onActivated.addListener(onTabChanged);
-
 async function showPopup(tabId) {
   await browser.pageAction.show(tabId);
 
@@ -227,12 +241,23 @@ async function onNavigationCompleted(navDetails) {
   }
 }
 
-browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+function activate() {
+  browser.tabs.onActivated.addListener(onTabChanged);
+  browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+}
+function deactivate() {
+  TabState.hidePageActions();
+  gCurrentTabUrl = undefined;
+  browser.tabs.onActivated.removeListener(onTabChanged);
+  browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
+}
+activate();
 
 async function shouldQueryUser(navDetails) {
   try {
     const url = new URL(navDetails.url);
-    return (url.protocol === "http:" || url.protocol === "https:") &&
+    return !gNeverShowAgain &&
+           (url.protocol === "http:" || url.protocol === "https:") &&
            (!gDomainCheckTimestamps[url.host] ||
             gDomainCheckTimestamps[url.host] <
              (Date.now() - gMinimumFrequencyBeforeRePrompting)) &&
@@ -245,13 +270,22 @@ async function shouldQueryUser(navDetails) {
 }
 
 async function onMessage(message) {
-  const { tabId, type, action } = message;
+  const { tabId, type, action, neverShowAgain } = message;
+
+  if (neverShowAgain !== undefined) {
+    if (neverShowAgain) {
+      gNeverShowAgain = true;
+      return undefined;
+    }
+    delete message.neverShowAgain;
+  }
 
   const tabState = await TabState.get(tabId);
 
   delete message.tabId;
   delete message.type;
   delete message.action;
+  delete message.option;
   if (Object.keys(message).length) {
     tabState.updateReport(message);
   }
@@ -292,6 +326,11 @@ async function onMessage(message) {
 }
 
 async function handleButtonClick(action, tabState) {
+  if (gNeverShowAgain) {
+    deactivate();
+    return;
+  }
+
   switch (tabState.slide) {
     case "initialPrompt": {
       const userReportsProblem = action !== "yes";
@@ -301,25 +340,15 @@ async function handleButtonClick(action, tabState) {
         tabState.slide = "thankYou";
         tabState.markAsVerified();
       } else {
-        tabState.slide = "requestFeedback";
-      }
-      break;
-    }
-    case "requestFeedback": {
-      if (action === "yes") {
         tabState.slide = "feedbackForm";
-      } else {
-        tabState.submitReport();
-        tabState.slide = "thankYou";
-        closePopup();
-        tabState.markAsVerified();
       }
       break;
     }
     case "feedbackForm": {
       if (action === "submit") {
         tabState.submitReport();
-        tabState.slide = "thankYou";
+        tabState.slide = "thankYouFeedback";
+        browser.tabs.create({url: gURLThankYou});
       } else {
         closePopup();
         tabState.reset();

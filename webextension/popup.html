@@ -13,20 +13,23 @@
     <section id="initialPrompt" class="icon_question">
       <h1></h1>
       <p></p>
+      <label>
+        <input type="checkbox" name="neverShowAgain" />
+      </label>
+      <a href="https://mozilla.github.io/webcompat-blipz-experiment/better.html"></a>
       <button data-action="yes" class="emphasize"></button>
       <button data-action="no"></button>
     </section>
     <section id="thankYou" class="icon_done">
       <h1></h1>
-      <p></p>
     </section>
-    <section id="requestFeedback" class="icon_question">
+    <section id="thankYouFeedback" class="icon_done">
       <h1></h1>
-      <button data-action="yes" class="emphasize"></button>
-      <button data-action="no"></button>
+      <p></p>
     </section>
     <section id="feedbackForm" class="icon_information">
       <h1></h1>
+      <p></p>
       <form>
         <select name="issueType" required>
           <option value="" hidden></option>
@@ -40,6 +43,9 @@
         <button id="issueTakeScreenshot"></button>
         <button id="issueRemoveScreenshot"></button>
       </form>
+      <label>
+        <input type="checkbox" name="includeURL" checked />
+      </label>
       <button data-action="cancel"></button>
       <button data-action="submit" class="emphasize"></button>
     </section>
