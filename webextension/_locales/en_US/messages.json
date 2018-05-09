@@ -51,6 +51,13 @@
     "message": "Something else"
   },
 
+  "labelIncludeURL": {
+    "message": "Include the address of the page I was on"
+  },
+  "labelNeverShowAgain": {
+    "message": "Never show me this message again"
+  },
+
   "placeholderIssueType": {
     "message": "Type of issue"
   },
@@ -59,24 +66,30 @@
   },
 
   "titleInitialPrompt": {
-    "message": "Site working for you?"
+    "message": "Firefox wants to know: are you satisfied with the way this website is working?"
   },
   "textInitialPrompt": {
-    "message": "We are currently running an experiment to gather data on websites which may have web compatibility issues."
+    "message": "Help us to better detect issues with the web."
+  },
+  "linkInitialPrompt": {
+    "message": "Why am I seeing this?"
   },
 
   "titleThankYou": {
     "message": "Thank you!"
   },
-  "textThankYou": {
-    "message": "Your feedback has been saved."
-  },
 
-  "titleRequestFeedback": {
-    "message": "Thank you. Could you provide more feedback?"
+  "titleThankYouFeedback": {
+    "message": "Thank you for your feedback. It helps Firefox make the web better."
+  },
+  "textThankYouFeedback": {
+    "message": "In the future if you experience any problems you can always click the icon again and report an issue, straight from your browser."
   },
 
   "titleFeedbackForm": {
-    "message": "Feedback information?"
+    "message": "Feedback"
+  },
+  "textFeedbackForm": {
+    "message": "Could you please provide some more information for us? It allows us to better detect issues with the web."
   }
 }

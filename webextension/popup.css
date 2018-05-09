@@ -11,7 +11,7 @@ body {
   min-width: 36em;
   max-width: 36em;
 }
-input,
+input[type="button"],
 button,
 select,
 textarea {
@@ -22,7 +22,7 @@ textarea {
   padding: 0 0.5em;
   height: 2.5em;
 }
-input,
+input[type="button"],
 button,
 select {
   line-height: 2.5em;
@@ -32,7 +32,7 @@ textarea {
   width: calc(100% - 1.25em) !important;
   padding: 0.5em;
 }
-input,
+input[type="button"],
 textarea {
   background: #fff;
 }
@@ -42,30 +42,64 @@ button {
 section {
   background-position: 24px 2.5em;
   background-repeat: no-repeat;
+  background-size: 28px 28px;
   padding-top: 2em;
 }
 section:not(.active) {
   display: none;
 }
 section > h1 {
-  font-size: 1.5rem;
-  line-height: 1.5em;
-  padding-bottom: 0.5em;
+  font-size: 1.4rem;
+  line-height: 1.2em;
 }
+section > a,
+section > p,
 section > h1,
-section > p,
-section > form {
-  padding-left: 75px;
-  padding-right: 75px;
+section > form,
+section > label {
+  margin-left: 75px;
+  margin-right: 45px;
 }
-section > p,
-section > form {
+section > label,
+section > label > *,
+section > label::after {
+  display: block;
+  line-height: 1.2em;
+  height: 1.2em;
+}
+section > label > * {
+  position: absolute;
+}
+section > label::after {
+  margin-left: 1.5em;
+}
+section > h1 + :not(button) {
+  margin-top: 0.5em;
+}
+section > h1:only-child {
+  padding-top: 0.75em;
+  padding-bottom: 0;
+}
+section > :not(button):last-child {
   padding-bottom: 2em;
 }
+section > a {
+  display: inline-block;
+}
+section > a,
+section > label {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
 section > p,
-section > button {
+section > button,
+section > label {
   font-size: 1rem;
   line-height: 1.5em;
+}
+section > a + label,
+section > label + a {
+  margin-top: 0;
 }
 section > form > * {
   display: block;
@@ -81,6 +115,10 @@ section > button {
 }
 section > button + button {
   border-left: 1px solid #e1e1e1;
+}
+section > h1 + button,
+section > h1 + button + button {
+  margin-top: 1em;
 }
 #feedbackForm select,
 #feedbackForm textarea {
@@ -104,11 +142,14 @@ button:focus {
 
 #initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
 #initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
+#initialPrompt > a::before { content: "__MSG_linkInitialPrompt__"; }
+
+#initialPrompt > label::after { content: "__MSG_labelNeverShowAgain__"; }
 
 #thankYou > h1::before { content: "__MSG_titleThankYou__"; }
-#thankYou > p::before { content: "__MSG_textThankYou__"; }
 
-#requestFeedback > h1::before { content: "__MSG_titleRequestFeedback__"; }
+#thankYouFeedback > h1::before { content: "__MSG_titleThankYouFeedback__"; }
+#thankYouFeedback > p::before { content: "__MSG_textThankYouFeedback__"; }
 
 #initialPrompt > button::before { content: "__MSG_buttonYes__"; }
 #requestFeedback > button::before { content: "__MSG_buttonYes__"; }
@@ -117,6 +158,8 @@ button:focus {
 #requestFeedback > button+button::before { content: "__MSG_buttonNo__"; }
 
 #feedbackForm > h1::before { content: "__MSG_titleFeedbackForm__"; }
+#feedbackForm > p::after { content: "__MSG_textFeedbackForm__"; }
+#feedbackForm > label::after { content: "__MSG_labelIncludeURL__"; }
 
 button[data-action="yes"]::before { content: "__MSG_buttonYes__"; }
 button[data-action="no"]::before { content: "__MSG_buttonNo__"; }
@@ -129,12 +172,12 @@ form img {
 
 #issueRemoveScreenshot::before {
   content: "__MSG_buttonRemoveScreenshot__";
-  background: url(icons/broken_page.svg) no-repeat;
+  background: url(icons/screenshot.svg) no-repeat;
   padding-left: 20px;
 }
 #issueTakeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
-  background: url(icons/broken_page.svg) no-repeat;
+  background: url(icons/screenshot.svg) no-repeat;
   padding-left: 20px;
 }
 

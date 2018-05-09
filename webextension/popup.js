@@ -61,6 +61,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  for (const name of ["neverShowAgain", "includeURL"]) {
+    const input = document.querySelector(`[name="${name}"]`);
+
+    input.addEventListener("change", e => {
+      const message = {};
+      message[input.name] = input.checked;
+      portToBGScript.send(message);
+    });
+  }
+
   autosizeTextArea(document.querySelector("[name=issueDescription]"));
 });
 
