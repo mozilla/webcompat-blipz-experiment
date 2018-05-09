@@ -149,7 +149,7 @@ const TabState = (function() {
         if (incognito !== undefined) {
           report.incognito = incognito;
         }
-        if (report.includeURL !== undefined) {
+        if ("includeURL" in report !== undefined) {
           if (report.includeURL) {
             report.url = url;
           }
@@ -257,7 +257,7 @@ async function shouldQueryUser(navDetails) {
   try {
     const url = new URL(navDetails.url);
     return !gNeverShowAgain &&
-           (url.protocol === "http:" || url.protocol === "https:") &&
+           ["http:", "https:"].includes(url.protocol) &&
            (!gDomainCheckTimestamps[url.host] ||
             gDomainCheckTimestamps[url.host] <
              (Date.now() - gMinimumFrequencyBeforeRePrompting)) &&
@@ -270,10 +270,10 @@ async function shouldQueryUser(navDetails) {
 }
 
 async function onMessage(message) {
-  const { tabId, type, action, neverShowAgain } = message;
+  const { tabId, type, action } = message;
 
-  if (neverShowAgain !== undefined) {
-    if (neverShowAgain) {
+  if ("neverShowAgain" in message) {
+    if (message.neverShowAgain) {
       gNeverShowAgain = true;
       return undefined;
     }
