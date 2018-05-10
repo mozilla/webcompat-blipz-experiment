@@ -90,6 +90,10 @@ const Config = (function() {
       return domainMatch && !this._domainsToCheck[domainMatch];
     }
 
+    get screenshotFormat() {
+      return {format: "jpeg", quality: 75};
+    }
+
     get thankYouPageURL() {
       return "https://mozilla.github.io/webcompat-blipz-experiment/thanks.html";
     }
@@ -406,7 +410,7 @@ async function onMessageFromPageAction(message) {
       break;
     }
     case "requestScreenshot": {
-      browser.tabs.captureTab(tabId).then(screenshot => {
+      browser.tabs.captureTab(tabId, Config.screenshotFormat).then(screenshot => {
         tabState.updateReport({screenshot});
         tabState.maybeUpdatePageAction(["screenshot"]);
       }).catch(error => {
