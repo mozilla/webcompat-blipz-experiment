@@ -6,7 +6,7 @@
 
 /* globals browser */
 
-let gCurrentlyPromptingTabId;
+let gCurrentlyPromptingTab;
 
 const Config = (function() {
   class Config {
@@ -121,8 +121,8 @@ const Config = (function() {
 }());
 
 async function shouldPromptUser(navDetails) {
-  if (gCurrentlyPromptingTabId) {
-    return gCurrentlyPromptingTabId === navDetails.tabId;
+  if (gCurrentlyPromptingTab) {
+    return gCurrentlyPromptingTab.id === navDetails.tabId;
   }
 
   try {
@@ -137,10 +137,9 @@ async function shouldPromptUser(navDetails) {
   }
 }
 
-async function setPageActionIcon(tabId, active) {
-  const path = active ? "icons/broken_page_active.svg"
-                      : "icons/broken_page.svg";
-  await browser.pageAction.setIcon({tabId, path});
+function backgroundSendReport(report) {
+  console.info("Would submit this report: ", report);
+  return Promise.resolve();
 }
 
 const portToPageAction = (function() {
@@ -148,16 +147,20 @@ const portToPageAction = (function() {
 
   browser.runtime.onConnect.addListener(_port => {
     port = _port;
-    port.onMessage.addListener(onMessage);
+    port.onMessage.addListener(onMessageFromPageAction);
     port.onDisconnect.addListener(function() {
       port = undefined;
       TabState.get().then(tabState => {
-        setPageActionIcon(tabState.tabId, tabState.inProgress);
+        // When the popup is hidden.
+        updatePageActionIcon(tabState.tabId);
+        if (Config.neverShowAgain) {
+          deactivate();
+        }
       });
     });
 
     TabState.get().then(tabState => {
-      tabState.maybeUpdatePopup();
+      tabState.maybeUpdatePageAction();
     });
   });
 
@@ -185,7 +188,7 @@ const TabState = (function() {
       this.reset();
     }
 
-    async maybeUpdatePopup(onlyProperties) {
+    async maybeUpdatePageAction(onlyProperties) {
       if (portToPageAction.isConnected() && ((await getActiveTab()) || {}).id === this._tabId) {
         const info = Object.assign({}, this._report, {
           tabId: this._tabId,
@@ -208,12 +211,6 @@ const TabState = (function() {
       }
     }
 
-    get inProgress() {
-      return this._slide !== "initialPrompt" &&
-             this._slide !== "thankYouFeedback" &&
-             this._slide !== "thankYou";
-    }
-
     reset() {
       this._slide = "initialPrompt";
       this._report = {includeURL: true};
@@ -229,8 +226,8 @@ const TabState = (function() {
 
     set slide(name) {
       this._slide = name;
-      setPageActionIcon(this._tabId, this.inProgress);
-      this.maybeUpdatePopup(["slide"]);
+      updatePageActionIcon(this._tabId);
+      this.maybeUpdatePageAction(["slide"]);
     }
 
     get screenshot() {
@@ -252,8 +249,8 @@ const TabState = (function() {
     }
 
     async markAsVerified() {
-      await setPageActionIcon(this._tabId, false);
-      gCurrentlyPromptingTabId = undefined;
+      gCurrentlyPromptingTab = undefined;
+      await updatePageActionIcon(this._tabId);
     }
 
     async submitReport() {
@@ -287,12 +284,6 @@ const TabState = (function() {
       return this._reportSubmitPromise;
     }
 
-    static hidePageActions() {
-      for (const tab of Object.values(TabStates)) {
-        browser.pageAction.hide(tab._tabId);
-      }
-    }
-
     static reset(tabId) {
       delete TabStates[tabId];
     }
@@ -312,72 +303,71 @@ const TabState = (function() {
   };
 }());
 
-function backgroundSendReport(report) {
-  console.info("Would submit this report: ", report);
-  return Promise.resolve();
-}
-
 async function onTabChanged(info) {
   const { tabId } = info;
-  const tabState = await TabState.get(tabId);
-  await setPageActionIcon(tabId, tabState.inProgress);
-  if (tabState.inProgress) {
-    await showPopup(tabId);
-    tabState.maybeUpdatePopup();
-  }
-}
 
-async function showPopup(tabId) {
-  await browser.pageAction.show(tabId);
-
-  /* return new Promise(resolve => {
-     requestAnimationFrame(async function() {
-       await browser.experiments.pageAction.forceOpenPopup();
-       resolve();
-     });
-   });*/
-}
-
-let gCurrentTabUrl;
-
-async function onNavigationCompleted(navDetails) {
-  const { url, tabId } = navDetails;
-
-  if (url && url === gCurrentTabUrl) {
-    const tabState = await TabState.get(tabId);
-    await setPageActionIcon(tabId, tabState.inProgress);
-    browser.pageAction.show(tabId);
+  if (Config.neverShowAgain) {
+    browser.pageAction.hide(tabId);
     return;
   }
 
-  TabState.reset(tabId);
-  gCurrentTabUrl = url;
+  await updatePageActionIcon(tabId);
 
-  if (await shouldPromptUser(navDetails)) {
-    gCurrentlyPromptingTabId = navDetails.tabId;
-    await setPageActionIcon(tabId, true);
-    showPopup(tabId);
+  if (Config.lastPromptTime) {
+    await browser.pageAction.show(tabId);
+  }
 
-    const domain = new URL(url).host;
-    Config.onUserPrompted(domain);
+  if ((gCurrentlyPromptingTab || {}).id === tabId) {
+    await showPageAction(tabId);
+
+    const tabState = await TabState.get(tabId);
+    tabState.maybeUpdatePageAction();
   }
 }
 
-function activate() {
-  browser.tabs.onActivated.addListener(onTabChanged);
-  browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+async function onNavigationCommitted(navDetails) {
+  const { url, tabId, frameId } = navDetails;
+
+  // We only care about top-level navigations, not frames.
+  if (frameId !== 0) {
+    return;
+  }
+
+  // Check if the user navigated away from the URL during a prompt
+  // and cancel any in-progress prompting.
+  if (gCurrentlyPromptingTab &&
+      gCurrentlyPromptingTab.id === tabId &&
+      gCurrentlyPromptingTab.url !== url) {
+    gCurrentlyPromptingTab = undefined;
+    TabState.reset(tabId);
+  }
+
+  // Show the page action icon if it's been shown before.
+  if (!Config.neverShowAgain && Config.lastPromptTime) {
+    updatePageActionIcon(tabId);
+    await browser.pageAction.show(tabId);
+  }
 }
 
-function deactivate() {
-  TabState.hidePageActions();
-  gCurrentTabUrl = undefined;
-  browser.tabs.onActivated.removeListener(onTabChanged);
-  browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
+async function onNavigationCompleted(navDetails) {
+  const { url, tabId, frameId } = navDetails;
+
+  // We only care about top-level navigations, not frames.
+  if (frameId !== 0) {
+    return;
+  }
+
+  // When the page has loaded, maybe prompt the user.
+  if (await shouldPromptUser(navDetails)) {
+    gCurrentlyPromptingTab = {id: tabId, url};
+    await updatePageActionIcon(tabId);
+    await browser.pageAction.show(tabId);
+    showPageAction(tabId);
+    Config.onUserPrompted(new URL(url).host);
+  }
 }
 
-Config.load().then(activate);
-
-async function onMessage(message) {
+async function onMessageFromPageAction(message) {
   const { tabId, type, action } = message;
 
   if ("neverShowAgain" in message) {
@@ -416,9 +406,9 @@ async function onMessage(message) {
       break;
     }
     case "requestScreenshot": {
-      browser.tabs.captureVisibleTab().then(screenshot => {
+      browser.tabs.captureTab(tabId).then(screenshot => {
         tabState.updateReport({screenshot});
-        tabState.maybeUpdatePopup(["screenshot"]);
+        tabState.maybeUpdatePageAction(["screenshot"]);
       }).catch(error => {
         console.error(browser.i18n.getMessage("errorScreenshotFail"), error);
       });
@@ -433,9 +423,33 @@ async function onMessage(message) {
   return undefined;
 }
 
+function activate() {
+  browser.tabs.onActivated.addListener(onTabChanged);
+  browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
+  browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+}
+
+function deactivate() {
+  hidePageActionOnEveryTab();
+  gCurrentlyPromptingTab = undefined;
+  browser.tabs.onActivated.removeListener(onTabChanged);
+  browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
+  browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
+}
+
+Config.load().then(activate);
+
+function hidePageActionOnEveryTab() {
+  browser.tabs.query({}).then(tabs => {
+    for (const {id} of tabs) {
+      browser.pageAction.hide(id);
+    }
+  });
+}
+
 async function handleButtonClick(action, tabState) {
   if (Config.neverShowAgain) {
-    deactivate();
+    browser.pageAction.hide(tabState.tabId);
     return;
   }
 
@@ -458,7 +472,7 @@ async function handleButtonClick(action, tabState) {
         tabState.slide = "thankYouFeedback";
         browser.tabs.create({url: Config.thankYouPageURL});
       } else {
-        closePopup();
+        closePageAction();
         tabState.reset();
       }
       tabState.markAsVerified();
@@ -467,13 +481,29 @@ async function handleButtonClick(action, tabState) {
   }
 }
 
+async function updatePageActionIcon(tabId) {
+  const active = (gCurrentlyPromptingTab || {}).id === tabId;
+  const path = active ? "icons/broken_page_active.svg"
+                      : "icons/broken_page.svg";
+  await browser.pageAction.setIcon({tabId, path});
+}
+
 function getActiveTab() {
   return browser.tabs.query({active: true, lastFocusedWindow: true}).then(tabs => {
     return tabs[0];
   });
 }
 
-function closePopup() {
+async function showPageAction(tabId) {
+  /* return new Promise(resolve => {
+     requestAnimationFrame(async function() {
+       await browser.experiments.pageAction.forceOpenPopup();
+       resolve();
+     });
+   });*/
+}
+
+function closePageAction() {
   if (portToPageAction.isConnected()) {
     portToPageAction.send("closePopup");
   }
