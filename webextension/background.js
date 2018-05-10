@@ -6,14 +6,136 @@
 
 /* globals browser */
 
-const gURLThankYou = "https://mozilla.github.io/webcompat-blipz-experiment/thanks.html";
+let gCurrentlyPromptingTabId;
 
-const gMinimumFrequencyBeforeRePrompting = 1000 * 20; // 20 seconds (for testing)
-const gSkipPrivateBrowsingTabs = true;
+const Config = (function() {
+  class Config {
+    constructor() {
+      this._neverShowAgain = false;
+      this._skipPrivateBrowsingTabs = true;
+      this._lastPromptTime = 0;
+      this._domainsToCheck = {
+        "accounts.google.com": 0,
+        "amazon.com": 0,
+        "amazon.in": 0,
+        "bing.com": 0,
+        "docs.google.com": 0,
+        "drive.google.com": 0,
+        "facebook.com": 0,
+        "flipkart.com": 0,
+        "github.com": 0,
+        "google.co.in": 0,
+        "google.com": 0,
+        "inbox.google.com": 0,
+        "instagram.com": 0,
+        "linkedin.com": 0,
+        "mail.google.com": 0,
+        "netflix.com": 0,
+        "pandora.com": 0,
+        "play.google.com": 0,
+        "reddit.com": 0,
+        "soundcloud.com": 0,
+        "theverge.com": 0,
+        "twitch.tv": 0,
+        "twitter.com": 0,
+        "web.whatsapp.com": 0,
+        "youtube.com": 0,
+      };
+    }
 
-const gDomainCheckTimestamps = {};
+    load() {
+      // TBD
+      return Promise.resolve();
+    }
 
-let gNeverShowAgain = false;
+    save(options) {
+      // TBD
+      console.info("Saving options", options);
+    }
+
+    onUserPrompted(domain) {
+      const now = Date.now();
+      this._lastPromptTime = now;
+      this._domainsToCheck[domain] = now;
+      this.save({
+        lastPromptTime: now,
+        domainsToMatch: this._domainsToCheck
+      });
+    }
+
+    findDomainMatch(domain) {
+      for (const candidate of Object.keys(this._domainsToCheck)) {
+        if (domain.endsWith(candidate)) {
+          return candidate;
+        }
+      }
+      return undefined;
+    }
+
+    shouldPromptUserNow(domain) {
+      // Prompt at most once a day, at a minimum once every three days,
+      // for a maximum of five prompts per user and one prompt per domain.
+      if (this._lastPromptTime) {
+        const now = Date.now();
+        const oneDay = 1000 * 60 * 60 * 24;
+        const nextValidCheckTime = this._lastPromptTime + oneDay;
+        const nextNecessaryCheckTime = this._lastPromptTime - (oneDay * 3);
+        if (now < nextValidCheckTime &&
+            (now > nextNecessaryCheckTime || Math.random() > 0.5)) {
+          return false;
+        }
+      }
+
+      const domainMatch = this.findDomainMatch(domain);
+      return domainMatch && !this._domainsToCheck[domainMatch];
+    }
+
+    get thankYouPageURL() {
+      return "https://mozilla.github.io/webcompat-blipz-experiment/thanks.html";
+    }
+
+    get lastPromptTime() {
+      return this._lastPromptTime;
+    }
+
+    get neverShowAgain() {
+      return this._neverShowAgain;
+    }
+
+    set neverShowAgain(bool) {
+      this._neverShowAgain = bool;
+      this.save({neverShowAgain: bool});
+    }
+
+    get skipPrivateBrowsingTabs() {
+      return this._skipPrivateBrowsingTabs;
+    }
+
+    set skipPrivateBrowsingTabs(bool) {
+      this._skipPrivateBrowsingTabs = bool;
+      this.save({skipPrivateBrowsingTabs: bool});
+    }
+  }
+
+  return new Config();
+}());
+
+async function shouldPromptUser(navDetails) {
+  if (gCurrentlyPromptingTabId) {
+    return gCurrentlyPromptingTabId === navDetails.tabId;
+  }
+
+  try {
+    const url = new URL(navDetails.url);
+    return !Config.neverShowAgain &&
+           ["http:", "https:"].includes(url.protocol) &&
+           Config.shouldPromptUserNow(url.host) &&
+           (!Config.skipPrivateBrowsingTabs ||
+            !(await browser.tabs.get(navDetails.tabId)).incognito);
+  } catch (_) {
+    return false;
+  }
+}
 
 async function setPageActionIcon(tabId, active) {
   const path = active ? "icons/broken_page_active.svg"
@@ -130,12 +252,8 @@ const TabState = (function() {
     }
 
     async markAsVerified() {
-      try {
-        await setPageActionIcon(this._tabId, false);
-        const { url } = await browser.tabs.get(this._tabId);
-        const domain = new URL(url).host;
-        gDomainCheckTimestamps[domain] = Date.now();
-      } catch (_) { }
+      await setPageActionIcon(this._tabId, false);
+      gCurrentlyPromptingTabId = undefined;
     }
 
     async submitReport() {
@@ -235,9 +353,13 @@ async function onNavigationCompleted(navDetails) {
   TabState.reset(tabId);
   gCurrentTabUrl = url;
 
-  if (await shouldQueryUser(navDetails)) {
+  if (await shouldPromptUser(navDetails)) {
+    gCurrentlyPromptingTabId = navDetails.tabId;
     await setPageActionIcon(tabId, true);
     showPopup(tabId);
+
+    const domain = new URL(url).host;
+    Config.onUserPrompted(domain);
   }
 }
 
@@ -245,36 +367,22 @@ function activate() {
   browser.tabs.onActivated.addListener(onTabChanged);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
 }
+
 function deactivate() {
   TabState.hidePageActions();
   gCurrentTabUrl = undefined;
   browser.tabs.onActivated.removeListener(onTabChanged);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
 }
-activate();
 
-async function shouldQueryUser(navDetails) {
-  try {
-    const url = new URL(navDetails.url);
-    return !gNeverShowAgain &&
-           ["http:", "https:"].includes(url.protocol) &&
-           (!gDomainCheckTimestamps[url.host] ||
-            gDomainCheckTimestamps[url.host] <
-             (Date.now() - gMinimumFrequencyBeforeRePrompting)) &&
-           (!gSkipPrivateBrowsingTabs ||
-            !(await browser.tabs.get(navDetails.tabId)).incognito) &&
-           Math.random() > 0.5;
-  } catch (_) {
-    return false;
-  }
-}
+Config.load().then(activate);
 
 async function onMessage(message) {
   const { tabId, type, action } = message;
 
   if ("neverShowAgain" in message) {
     if (message.neverShowAgain) {
-      gNeverShowAgain = true;
+      Config.neverShowAgain = true;
       return undefined;
     }
     delete message.neverShowAgain;
@@ -326,7 +434,7 @@ async function onMessage(message) {
 }
 
 async function handleButtonClick(action, tabState) {
-  if (gNeverShowAgain) {
+  if (Config.neverShowAgain) {
     deactivate();
     return;
   }
@@ -348,7 +456,7 @@ async function handleButtonClick(action, tabState) {
       if (action === "submit") {
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
-        browser.tabs.create({url: gURLThankYou});
+        browser.tabs.create({url: Config.thankYouPageURL});
       } else {
         closePopup();
         tabState.reset();
