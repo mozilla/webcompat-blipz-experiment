@@ -95,7 +95,7 @@ const Config = (function() {
     }
 
     get thankYouPageURL() {
-      return "https://mozilla.github.io/webcompat-blipz-experiment/thanks.html";
+      return "https://webcompat.mozilla.community/thanks";
     }
 
     get lastPromptTime() {
