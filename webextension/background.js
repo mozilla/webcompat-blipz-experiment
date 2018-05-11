@@ -154,6 +154,7 @@ const portToPageAction = (function() {
     port.onMessage.addListener(onMessageFromPageAction);
     port.onDisconnect.addListener(function() {
       port = undefined;
+      gCurrentlyPromptingTab = undefined;
       TabState.get().then(tabState => {
         // When the popup is hidden.
         updatePageActionIcon(tabState.tabId);
@@ -164,6 +165,9 @@ const portToPageAction = (function() {
     });
 
     TabState.get().then(tabState => {
+      const tabId = tabState.tabId;
+      gCurrentlyPromptingTab = {id: tabId, url: tabState.url};
+      updatePageActionIcon(tabId);
       tabState.maybeUpdatePageAction();
     });
   });
@@ -187,8 +191,9 @@ const TabState = (function() {
   const TabStates = {};
 
   return class TabState {
-    constructor(tabId) {
+    constructor(tabId, url) {
       this._tabId = tabId;
+      this._url = url;
       this.reset();
     }
 
@@ -218,6 +223,14 @@ const TabState = (function() {
     reset() {
       this._slide = "initialPrompt";
       this._report = {includeURL: true};
+    }
+
+    get url() {
+      return this._url;
+    }
+
+    set url(url) {
+      this._url = url;
     }
 
     get tabId() {
@@ -264,13 +277,13 @@ const TabState = (function() {
 
       this._reportSubmitPromise = new Promise(async (resolve, reject) => {
         const report = this._report;
-        const { incognito, url } = await browser.tabs.get(this._tabId);
+        const { incognito } = await browser.tabs.get(this._tabId);
         if (incognito !== undefined) {
           report.incognito = incognito;
         }
         if ("includeURL" in report !== undefined) {
           if (report.includeURL) {
-            report.url = url;
+            report.url = this._url;
           }
           delete report.includeURL;
         }
@@ -293,16 +306,23 @@ const TabState = (function() {
     }
 
     static async get(tabId) {
+      let tab;
       if (!tabId) {
-        tabId = (await getActiveTab()).id;
-        if (!tabId) {
+        tab = await getActiveTab();
+        if (!tab) {
           return undefined;
         }
+        tabId = tab.id;
+      }
+      if (!tab) {
+        tab = await browser.tabs.get(tabId);
       }
       if (!TabStates[tabId]) {
-        TabStates[tabId] = new TabState(tabId);
+        TabStates[tabId] = new TabState(tabId, tab.url);
       }
-      return TabStates[tabId];
+      const tabState = TabStates[tabId];
+      tabState.url = tab.url;
+      return tabState;
     }
   };
 }());
@@ -499,12 +519,7 @@ function getActiveTab() {
 }
 
 async function showPageAction(tabId) {
-  /* return new Promise(resolve => {
-     requestAnimationFrame(async function() {
-       await browser.experiments.pageAction.forceOpenPopup();
-       resolve();
-     });
-   });*/
+  return browser.experiments.pageAction.forceOpenPopup();
 }
 
 function closePageAction() {
