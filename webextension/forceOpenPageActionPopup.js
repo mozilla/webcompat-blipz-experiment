@@ -12,17 +12,17 @@ ChromeUtils.defineModuleGetter(this, "PageActions",
 ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
                                      "resource:///modules/BrowserWindowTracker.jsm");
 
-/* eslint no-unused-vars: ["error", { "varsIgnorePattern": "forceOpenPageActionPopup" }] */
 this.forceOpenPageActionPopup = class extends ExtensionAPI {
   getAPI(context) {
-    const pageActionID = ExtensionUtils.makeWidgetId(context.extension.id);
+    const extension = context.extension;
+    const pageActionAPI = extension.apiManager.getAPI("pageAction", extension,
+                                                      context.envType);
     return {
       experiments: {
         pageAction: {
           async forceOpenPopup() {
-            const pageAction = PageActions.actionForID(pageActionID);
             const window = BrowserWindowTracker.getTopWindow();
-            window.BrowserPageActions.togglePanelForAction(pageAction);
+            pageActionAPI.handleClick(window);
           },
         },
       },
