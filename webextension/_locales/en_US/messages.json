@@ -16,7 +16,10 @@
     "message": "Remove screenshot"
   },
   "buttonTakeScreenshot": {
-    "message": "Provide a screenshot"
+    "message": "Attach a Screenshot"
+  },
+  "buttonOK": {
+    "message": "Ok"
   },
   "buttonNo": {
     "message": "No"
@@ -52,10 +55,13 @@
   },
 
   "labelIncludeURL": {
-    "message": "Include the address of the page I was on"
+    "message": "Include the address of this website with your feedback"
+  },
+  "labelLearnMore": {
+    "message": "Learn More"
   },
   "labelNeverShowAgain": {
-    "message": "Never show me this message again"
+    "message": "Don't show this again"
   },
 
   "placeholderIssueType": {
@@ -80,16 +86,20 @@
   },
 
   "titleThankYouFeedback": {
-    "message": "Thank you for your feedback. It helps Firefox make the web better."
+    "message": "Thank you. Your feedback helps us make Firefox - and the web - better."
   },
   "textThankYouFeedback": {
-    "message": "In the future if you experience any problems you can always click the icon again and report an issue, straight from your browser."
+    "message": "If you experience problems again, you can report them by selecting the broken page icon from the address bar."
   },
 
   "titleFeedbackForm": {
-    "message": "Feedback"
+    "message": "Share Your Feedback"
   },
   "textFeedbackForm": {
-    "message": "Could you please provide some more information for us? It allows us to better detect issues with the web."
+    "message": "Please tell us more about your experience on this site so we can understand and fix the issue."
+  },
+
+  "textScreenshotOfIssue": {
+    "message": "Screenshot of Issue:"
   }
 }

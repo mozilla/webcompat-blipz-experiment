@@ -40,17 +40,26 @@ button {
   text-align: center;
 }
 section {
-  background-position: 24px 2.5em;
+  background-position: 24px 1.5em;
   background-repeat: no-repeat;
-  background-size: 28px 28px;
-  padding-top: 2em;
+  background-size: 32px 32px;
 }
 section:not(.active) {
   display: none;
 }
 section > h1 {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   line-height: 1.2em;
+  margin-top: 1em;
+}
+section > h2 {
+  position: relative;
+  font-size: 1.1rem;
+  line-height: 1.2em;
+  text-align: center;
+  padding: 0.75em 45px 0.75em 75px;
+  margin-bottom: 0.75em;
+  border-bottom: 1px solid #e1e1e1;
 }
 section > a,
 section > p,
@@ -74,22 +83,21 @@ section > label::after {
   margin-left: 1.5em;
 }
 section > h1 + :not(button) {
-  margin-top: 0.5em;
-}
-section > h1:only-child {
-  padding-top: 0.75em;
-  padding-bottom: 0;
+  margin-top: 0.75em;
 }
 section > :not(button):last-child {
   padding-bottom: 2em;
 }
 section > a {
   display: inline-block;
+  text-decoration: none;
+  padding: 0;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
-section > a,
 section > label {
-  margin-top: 1em;
-  margin-bottom: 1em;
+  margin-top: 0.75em;
+  margin-bottom: 1.25em;
 }
 section > p,
 section > button,
@@ -97,13 +105,10 @@ section > label {
   font-size: 1rem;
   line-height: 1.5em;
 }
-section > a + label,
-section > label + a {
-  margin-top: 0;
-}
 section > form > * {
   display: block;
   width: 100%;
+  margin-top: 1em;
 }
 section > button {
   border: 0;
@@ -113,6 +118,19 @@ section > button {
   float: left;
   height: 3em;
 }
+section > h2 > button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 100%;
+  border: none;
+  padding: 0;
+  background-color: transparent;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+}
 section > button + button {
   border-left: 1px solid #e1e1e1;
 }
@@ -120,25 +138,66 @@ section > h1 + button,
 section > h1 + button + button {
   margin-top: 1em;
 }
-#feedbackForm select,
-#feedbackForm textarea {
-  margin-bottom: 0.5em;
-}
 button.emphasize,
 button:active,
 button:focus {
   color: #fff;
-  background: #0260de;
+  background-color: #0260de;
+}
+section > button:only-of-type {
+  margin-top: 0.75em;
+  width: 100%;
+}
+section > h1 + button:only-of-type {
+  margin-top: 2.5em;
+}
+#thankYou > h1 {
+  margin-top: 1.75em;
+}
+#thankYouFeedback > a {
+  float: right;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+#feedbackForm select,
+#feedbackForm textarea {
+  margin-bottom: 0.5em;
 }
 
 #issueTakeScreenshot,
 #issueRemoveScreenshot {
   display: block;
 }
+#issueRemoveScreenshot {
+  padding-right: 16px;
+}
+#issueRemoveScreenshot > * {
+  vertical-align: top;
+  display: inline-block;
+}
+#issueRemoveScreenshot > img {
+  margin-left: 0.5em;
+  cursor: pointer;
+  max-width: 50%;
+  max-height: 14em;
+}
+#issueRemoveScreenshot > button {
+  border: 0;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  margin-left: -18px;
+  margin-top: -12px;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+  background-image: url(icons/remove.svg);
+}
 
-.icon_done { background-image: url(icons/done.svg); }
-.icon_question { background-image: url(icons/help.svg); }
-.icon_information { background-image: url(icons/info.svg); }
+#thankYou,
+#thankYouFeedback { background-image: url(icons/done.svg); }
+#initialPrompt { background-image: url(icons/broken_page.svg); }
+button[data-action="back"] { background-image: url(icons/back.svg); }
 
 #initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
 #initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
@@ -150,34 +209,21 @@ button:focus {
 
 #thankYouFeedback > h1::before { content: "__MSG_titleThankYouFeedback__"; }
 #thankYouFeedback > p::before { content: "__MSG_textThankYouFeedback__"; }
+#thankYouFeedback > a::after { content: "__MSG_labelLearnMore__"; }
 
-#initialPrompt > button::before { content: "__MSG_buttonYes__"; }
-#requestFeedback > button::before { content: "__MSG_buttonYes__"; }
-
-#initialPrompt > button+button::before { content: "__MSG_buttonNo__"; }
-#requestFeedback > button+button::before { content: "__MSG_buttonNo__"; }
-
-#feedbackForm > h1::before { content: "__MSG_titleFeedbackForm__"; }
+#feedbackForm > h2::before { content: "__MSG_titleFeedbackForm__"; }
 #feedbackForm > p::after { content: "__MSG_textFeedbackForm__"; }
 #feedbackForm > label::after { content: "__MSG_labelIncludeURL__"; }
+#issueRemoveScreenshot > p::after { content: "__MSG_textScreenshotOfIssue__"; }
 
+button[data-action="ok"]::before { content: "__MSG_buttonOK__"; }
 button[data-action="yes"]::before { content: "__MSG_buttonYes__"; }
 button[data-action="no"]::before { content: "__MSG_buttonNo__"; }
 button[data-action="submit"]::before { content: "__MSG_buttonSubmit__"; }
 button[data-action="cancel"]::before { content: "__MSG_buttonCancel__"; }
 
-form img {
-  cursor: pointer;
-}
-
-#issueRemoveScreenshot::before {
-  content: "__MSG_buttonRemoveScreenshot__";
-  background: url(icons/screenshot.svg) no-repeat;
-  padding-left: 20px;
-}
 #issueTakeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/screenshot.svg) no-repeat;
   padding-left: 20px;
 }
-

@@ -119,9 +119,7 @@ async function hideScreenshot() {
   await portToBGScript.send({type: "removeScreenshot"});
 
   const img = document.querySelector("img");
-  if (img) {
-    img.remove();
-  }
+  img.src = img.getAttribute("data-blank");
 
   document.querySelector("#issueTakeScreenshot").style.display = "";
   document.querySelector("#issueRemoveScreenshot").style.display = "none";
@@ -131,13 +129,11 @@ function showScreenshot(dataUrl) {
   document.querySelector("#issueTakeScreenshot").style.display = "none";
   document.querySelector("#issueRemoveScreenshot").style.display = "";
 
-  const img = document.createElement("img");
+  const img = document.querySelector("#issueRemoveScreenshot > img");
+  if (!img.getAttribute("data-blank")) {
+    img.setAttribute("data-blank", img.src);
+  }
   img.src = dataUrl;
-  document.querySelector("form").appendChild(img);
-
-  img.addEventListener("click", function() {
-    portToBGScript.send({type: "showScreenshot"});
-  });
 }
 
 function handleClick(e) {
@@ -145,9 +141,16 @@ function handleClick(e) {
     return;
   }
 
-  if (e.target.id === "issueRemoveScreenshot") {
+  if (e.target.matches("#issueRemoveScreenshot > button")) {
     e.preventDefault();
     hideScreenshot();
+    portToBGScript.send({type: "removeScreenshot"});
+    return;
+  }
+
+  if (e.target.matches("#issueRemoveScreenshot > img")) {
+    e.preventDefault();
+    portToBGScript.send({type: "showScreenshot"});
     return;
   }
 
