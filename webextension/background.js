@@ -41,16 +41,80 @@ const Config = (function() {
         "web.whatsapp.com": 0,
         "youtube.com": 0,
       };
+
+      browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
+        this._onAboutConfigPrefChanged.bind(this), "enabled");
+    }
+
+    _onAboutConfigPrefChanged() {
+      browser.experiments.aboutConfigPrefs.getBool("enabled").then(value => {
+        if (value !== undefined) {
+          this._neverShowAgain = !value;
+          if (value) {
+            activate();
+          } else {
+            deactivate();
+          }
+        }
+      });
     }
 
     load() {
-      // TBD
-      return Promise.resolve();
+      return Promise.all([
+        browser.experiments.browserInfo.getBuildID(),
+        browser.experiments.browserInfo.getUpdateChannel(),
+        browser.experiments.aboutConfigPrefs.getBool("enabled"),
+        browser.storage.local.get(),
+      ]).then(([buildID, releaseChannel, enabledPref, otherPrefs]) => {
+        this._buildID = buildID;
+        this._releaseChannel = releaseChannel;
+
+        // The "never show again" option is stored in about:config
+        // so users can reset it. The rest are stored in the web
+        // extension local store, as users would not benefit
+        // from them being in about:config anyway.
+        if (enabledPref !== undefined) {
+          this._neverShowAgain = !enabledPref;
+        }
+
+        // The list of domains to check needs special handling, as the list may
+        // change when the addon updates, and we must keep the new ones and
+        // remove the no-longer-interesting ones, while retaining whether the
+        // user has been prompted for any of the final domains.
+        if ("domainsToCheck" in otherPrefs) {
+          let foundChange = false;
+          const oldDomains = otherPrefs.domainsToCheck;
+          for (const domain of Object.keys(this._domainsToCheck)) {
+            if (domain in oldDomains) {
+              this._domainsToCheck[domain] = oldDomains[domain];
+              foundChange = true;
+            }
+          }
+          if (foundChange) {
+            this.save({domainsToCheck: this._domainsToCheck});
+          }
+          delete otherPrefs.domainsToCheck;
+        }
+
+        // The rest of the values can just be set on the object as-is, since
+        // we will have written them out with a valid value to begin with.
+        for (const [name, value] of Object.entries(otherPrefs)) {
+          this[`_${name}`] = value;
+        }
+      });
     }
 
     save(options) {
-      // TBD
-      console.info("Saving options", options);
+      const promises = [];
+      if ("neverShowAgain" in options) {
+        promises.push(browser.experiments.aboutConfigPrefs.setBool(
+                        "enabled", !options.neverShowAgain));
+        delete options.neverShowAgain;
+      }
+      if (Object.keys(options).length) {
+        promises.push(browser.storage.local.set(options));
+      }
+      return Promise.all(promises);
     }
 
     onUserPrompted(domain) {
@@ -59,7 +123,7 @@ const Config = (function() {
       this._domainsToCheck[domain] = now;
       this.save({
         lastPromptTime: now,
-        domainsToMatch: this._domainsToCheck
+        domainsToCheck: this._domainsToCheck,
       });
     }
 
@@ -118,6 +182,14 @@ const Config = (function() {
     set skipPrivateBrowsingTabs(bool) {
       this._skipPrivateBrowsingTabs = bool;
       this.save({skipPrivateBrowsingTabs: bool});
+    }
+
+    get releaseChannel() {
+      return this._releaseChannel;
+    }
+
+    get buildID() {
+      return this._buildID;
     }
   }
 
@@ -461,7 +533,11 @@ function deactivate() {
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
 }
 
-Config.load().then(activate);
+Config.load().then(() => {
+  if (!Config.neverShowAgain) {
+    activate();
+  }
+});
 
 function hidePageActionOnEveryTab() {
   browser.tabs.query({}).then(tabs => {

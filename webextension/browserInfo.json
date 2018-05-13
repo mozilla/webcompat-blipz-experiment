@@ -1,0 +1,22 @@
+[
+  {
+    "namespace": "experiments.browserInfo",
+    "description": "experimental API extensions to get browser info not exposed via web APIs",
+    "functions": [
+      {
+        "name": "getBuildID",
+        "type": "function",
+        "description": "Gets the build ID",
+        "parameters": [],
+        "async": true
+      },
+      {
+        "name": "getUpdateChannel",
+        "type": "function",
+        "description": "Gets the update channel",
+        "parameters": [],
+        "async": true
+      }
+    ]
+  }
+]
