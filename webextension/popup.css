@@ -11,6 +11,12 @@ body {
   min-width: 36em;
   max-width: 36em;
 }
+input,
+label,
+button,
+select {
+  cursor: pointer;
+}
 input[type="button"],
 button,
 select,
@@ -31,6 +37,7 @@ textarea {
   box-sizing: content-box;
   width: calc(100% - 1.25em) !important;
   padding: 0.5em;
+  min-height: 3.5em;
 }
 input[type="button"],
 textarea {
@@ -58,7 +65,7 @@ section > h2 {
   line-height: 1.2em;
   text-align: center;
   padding: 0.75em 45px 0.75em 75px;
-  margin-bottom: 0.75em;
+  margin-bottom: 1.25em;
   border-bottom: 1px solid #e1e1e1;
 }
 section > a,
@@ -92,7 +99,7 @@ section > a {
   display: inline-block;
   text-decoration: none;
   padding: 0;
-  margin-top: 0.5em;
+  margin-top: 0.25em;
   margin-bottom: 0.5em;
 }
 section > label {
@@ -103,7 +110,7 @@ section > p,
 section > button,
 section > label {
   font-size: 1rem;
-  line-height: 1.5em;
+  line-height: 1.25em;
 }
 section > form > * {
   display: block;
@@ -117,6 +124,10 @@ section > button {
   width: 50%;
   float: left;
   height: 3em;
+}
+section > * + button,
+section > * + button + button {
+  margin-top: 0.75em;
 }
 section > h2 > button {
   position: absolute;
@@ -163,6 +174,9 @@ section > h1 + button:only-of-type {
 #feedbackForm textarea {
   margin-bottom: 0.5em;
 }
+#feedbackForm > label {
+  margin-bottom: 0;
+}
 
 #issueTakeScreenshot,
 #issueRemoveScreenshot {
@@ -176,28 +190,40 @@ section > h1 + button:only-of-type {
   display: inline-block;
 }
 #issueRemoveScreenshot > img {
-  margin-left: 0.5em;
   cursor: pointer;
+  display: none;
+  margin-left: 0.5em;
   max-width: 50%;
   max-height: 14em;
+  border: 1px solid #eee;
+  border-radius: 4px;
 }
 #issueRemoveScreenshot > button {
-  border: 0;
   padding: 0;
-  width: 24px;
-  height: 24px;
-  margin-left: -18px;
-  margin-top: -12px;
-  background-color: transparent;
+  width: 30px;
+  height: 30px;
+  margin-left: -22px;
+  margin-top: -10px;
+  background-color: #fff;
   background-repeat: no-repeat;
-  background-size: 24px 24px;
+  background-position: 50% 50%;
+  background-size: 12px 12px;
   background-image: url(icons/remove.svg);
+  border: 1px solid #e1e1e1;
+  border-radius: 15px;
+  box-shadow: 0 2px 2px rgba(128, 128, 128, 0.2);
 }
-
 #thankYou,
-#thankYouFeedback { background-image: url(icons/done.svg); }
-#initialPrompt { background-image: url(icons/broken_page.svg); }
-button[data-action="back"] { background-image: url(icons/back.svg); }
+#thankYouFeedback {
+  background-image: url(icons/done.svg);
+}
+#initialPrompt {
+  background-image: url(icons/broken_page.svg);
+}
+button[data-action="back"] {
+  background-image: url(icons/back.svg);
+  background-size: 12px 12px;
+}
 
 #initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
 #initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
@@ -225,5 +251,5 @@ button[data-action="cancel"]::before { content: "__MSG_buttonCancel__"; }
 #issueTakeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/screenshot.svg) no-repeat;
-  padding-left: 20px;
+  padding-left: 24px;
 }

@@ -119,7 +119,8 @@ async function hideScreenshot() {
   await portToBGScript.send({type: "removeScreenshot"});
 
   const img = document.querySelector("img");
-  img.src = img.getAttribute("data-blank");
+  img.src = "";
+  img.style.display = "";
 
   document.querySelector("#issueTakeScreenshot").style.display = "";
   document.querySelector("#issueRemoveScreenshot").style.display = "none";
@@ -130,10 +131,8 @@ function showScreenshot(dataUrl) {
   document.querySelector("#issueRemoveScreenshot").style.display = "";
 
   const img = document.querySelector("#issueRemoveScreenshot > img");
-  if (!img.getAttribute("data-blank")) {
-    img.setAttribute("data-blank", img.src);
-  }
   img.src = dataUrl;
+  img.style.display = "inline-block";
 }
 
 function handleClick(e) {
