@@ -9,6 +9,8 @@
 let gCurrentlyPromptingTab;
 
 const Config = (function() {
+  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall(["enabled"]);
+
   class Config {
     constructor() {
       this._neverShowAgain = false;

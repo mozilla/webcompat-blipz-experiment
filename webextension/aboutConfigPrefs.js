@@ -8,6 +8,7 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
+ChromeUtils.defineModuleGetter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 
 const EventManager = ExtensionCommon.EventManager;
 
@@ -26,6 +27,8 @@ this.aboutConfigPrefs = class extends ExtensionAPI {
       }
     }
 
+    const prefsToClearOnUninstall = new Set();
+
     return {
       experiments: {
         aboutConfigPrefs: {
@@ -38,6 +41,28 @@ this.aboutConfigPrefs = class extends ExtensionAPI {
               Services.prefs.removeObserver(name, callback);
             };
           }).api(),
+          async clearPref(name) {
+            Services.prefs.clearUserPref(`${prefBranchPrefix}${name}`);
+          },
+          async clearPrefsOnUninstall(names) {
+            if (!names.length) {
+              return;
+            }
+            if (!prefsToClearOnUninstall.size) {
+              AddonManager.addAddonListener({
+                onUninstalling: addon => {
+                  if (addon.id === context.extension.id) {
+                    for (const name of prefsToClearOnUninstall) {
+                      this.clearPref(name);
+                    }
+                  }
+                }
+              });
+            }
+            for (const name of names) {
+              prefsToClearOnUninstall.add(name);
+            }
+          },
           async getBool(name) {
             return get("Bool", name);
           },

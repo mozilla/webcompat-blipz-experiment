@@ -17,6 +17,35 @@
     ],
     "functions": [
       {
+        "name": "clearPref",
+        "type": "function",
+        "description": "Clear a preference from the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "clearPrefsOnUninstall",
+        "type": "function",
+        "description": "Automatically clears preferences from the extension's preference branch when the addon is uninstalled",
+        "parameters": [
+          {
+            "name": "names",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The preference names"
+          }
+        ],
+        "async": true
+      },
+      {
         "name": "getBool",
         "type": "function",
         "description": "Get a boolean preference from the extension's preference branch",
