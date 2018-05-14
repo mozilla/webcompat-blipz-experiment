@@ -160,10 +160,6 @@ const Config = (function() {
       return {format: "jpeg", quality: 75};
     }
 
-    get thankYouPageURL() {
-      return "https://webcompat.mozilla.community/thanks";
-    }
-
     get lastPromptTime() {
       return this._lastPromptTime;
     }
@@ -469,8 +465,9 @@ async function onMessageFromPageAction(message) {
   const { tabId, type, action } = message;
 
   if ("neverShowAgain" in message) {
-    if (message.neverShowAgain) {
-      Config.neverShowAgain = true;
+    const neverShowAgain = message.neverShowAgain;
+    Config.neverShowAgain = neverShowAgain;
+    if (neverShowAgain) {
       return undefined;
     }
     delete message.neverShowAgain;
@@ -572,12 +569,21 @@ async function handleButtonClick(action, tabState) {
       if (action === "submit") {
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
-        browser.tabs.create({url: Config.thankYouPageURL});
+      } else if (action === "back") {
+        tabState.slide = "initialPrompt";
       } else {
         closePageAction();
         tabState.reset();
       }
       tabState.markAsVerified();
+      break;
+    }
+    case "thankYou": {
+      closePageAction();
+      break;
+    }
+    case "thankYouFeedback": {
+      closePageAction();
       break;
     }
   }

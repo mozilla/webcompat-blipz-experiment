@@ -10,25 +10,30 @@
     <script src="popup.js"></script>
   </head>
   <body>
-    <section id="initialPrompt" class="icon_question">
+    <section id="initialPrompt">
       <h1></h1>
       <p></p>
+      <a href="https://webcompat.mozilla.community/better"></a>
       <label>
         <input type="checkbox" name="neverShowAgain" />
       </label>
-      <a href="https://webcompat.mozilla.community/better"></a>
-      <button data-action="yes" class="emphasize"></button>
       <button data-action="no"></button>
+      <button data-action="yes" class="emphasize"></button>
     </section>
-    <section id="thankYou" class="icon_done">
+    <section id="thankYou">
       <h1></h1>
+      <button data-action="ok"></button>
     </section>
-    <section id="thankYouFeedback" class="icon_done">
+    <section id="thankYouFeedback">
       <h1></h1>
       <p></p>
+      <a href="https://webcompat.mozilla.community/thanks"></a>
+      <button data-action="ok"></button>
     </section>
-    <section id="feedbackForm" class="icon_information">
-      <h1></h1>
+    <section id="feedbackForm">
+      <h2>
+        <button data-action="back"></button>
+      </h2>
       <p></p>
       <form>
         <select name="issueType" required>
@@ -39,9 +44,13 @@
           <option value="playbackFailure"></option>
           <option value="other"></option>
         </select>
-        <textarea name="issueDescription" rows="1"></textarea>
         <button id="issueTakeScreenshot"></button>
-        <button id="issueRemoveScreenshot"></button>
+        <div id="issueRemoveScreenshot">
+          <p></p>
+          <img src="screenshot.jpg" alt="" />
+          <button></button>
+        </div>
+        <textarea name="issueDescription" rows="1"></textarea>
       </form>
       <label>
         <input type="checkbox" name="includeURL" checked />
