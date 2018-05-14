@@ -38,7 +38,7 @@ this.aboutConfigPrefs = class extends ExtensionAPI {
             };
             Services.prefs.addObserver(`${prefBranchPrefix}${name}`, callback);
             return () => {
-              Services.prefs.removeObserver(name, callback);
+              Services.prefs.removeObserver(`${prefBranchPrefix}${name}`, callback);
             };
           }).api(),
           async clearPref(name) {
