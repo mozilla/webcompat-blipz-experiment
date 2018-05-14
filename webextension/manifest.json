@@ -12,6 +12,22 @@
     }
   },
   "experiment_apis": {
+    "aboutConfigPrefs": {
+      "schema": "aboutConfigPrefs.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "aboutConfigPrefs.js",
+        "paths": [["experiments", "aboutConfigPrefs"]]
+      }
+    },
+    "browserInfo": {
+      "schema": "browserInfo.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "browserInfo.js",
+        "paths": [["experiments", "browserInfo"]]
+      }
+    },
     "forceOpenPageActionPopup": {
       "schema": "forceOpenPageActionPopup.json",
       "parent": {
@@ -29,6 +45,7 @@
     "128": "icons/broken_page.svg"
   },
   "permissions": [
+    "storage",
     "tabs",
     "webNavigation",
     "<all_urls>"

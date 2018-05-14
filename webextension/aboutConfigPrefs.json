@@ -1,0 +1,143 @@
+[
+  {
+    "namespace": "experiments.aboutConfigPrefs",
+    "description": "experimental API extension to allow access to about:config preferences",
+    "events": [
+      {
+        "name": "onPrefChange",
+        "type": "function",
+        "extraParameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference to monitor"
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "clearPref",
+        "type": "function",
+        "description": "Clear a preference from the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "clearPrefsOnUninstall",
+        "type": "function",
+        "description": "Automatically clears preferences from the extension's preference branch when the addon is uninstalled",
+        "parameters": [
+          {
+            "name": "names",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The preference names"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "getBool",
+        "type": "function",
+        "description": "Get a boolean preference from the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "setBool",
+        "type": "function",
+        "description": "Set a boolean preference in the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          },
+          {
+            "name": "value",
+            "type": "boolean",
+            "description": "The new value"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "getInt",
+        "type": "function",
+        "description": "Get an integer preference from the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "setInt",
+        "type": "function",
+        "description": "Set an integer preference in the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          },
+          {
+            "name": "value",
+            "type": "integer",
+            "description": "The new value"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "getString",
+        "type": "function",
+        "description": "Get a string preference from the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          }
+        ],
+        "async": true
+      },
+      {
+        "name": "setString",
+        "type": "function",
+        "description": "Set a string preference in the extension's preference branch",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "string",
+            "description": "The preference name"
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "description": "The new value"
+          }
+        ],
+        "async": true
+      }
+    ]
+  }
+]
