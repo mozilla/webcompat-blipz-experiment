@@ -64,11 +64,13 @@ const Config = (function() {
     load() {
       return Promise.all([
         browser.experiments.browserInfo.getBuildID(),
+        browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getBool("enabled"),
         browser.storage.local.get(),
-      ]).then(([buildID, releaseChannel, enabledPref, otherPrefs]) => {
+      ]).then(([buildID, platform, releaseChannel, enabledPref, otherPrefs]) => {
         this._buildID = buildID;
+        this._platform = platform;
         this._releaseChannel = releaseChannel;
 
         // The "never show again" option is stored in about:config
@@ -195,6 +197,10 @@ const Config = (function() {
 
     get releaseChannel() {
       return this._releaseChannel;
+    }
+
+    get platform() {
+      return this._platform;
     }
 
     get buildID() {
@@ -361,6 +367,9 @@ const TabState = (function() {
         if (incognito !== undefined) {
           report.incognito = incognito;
         }
+        report.buildID = Config.buildID;
+        report.platform = Config.platform;
+        report.releaseChannel = Config.releaseChannel;
         if ("includeURL" in report !== undefined) {
           if (report.includeURL) {
             report.url = this._url;
