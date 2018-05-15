@@ -9,7 +9,7 @@
 let gCurrentlyPromptingTab;
 
 const Config = (function() {
-  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall(["enabled", "branch"]);
+  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall(["enabled", "variation"]);
 
   const UIVariants = ["more-context", "little-context", "no-context"];
 
@@ -51,7 +51,7 @@ const Config = (function() {
         this._onAboutConfigPrefChanged.bind(this), "enabled");
 
       browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
-        this._onAboutConfigPrefChanged.bind(this), "branch");
+        this._onAboutConfigPrefChanged.bind(this), "variation");
     }
 
     _onAboutConfigPrefChanged(name) {
@@ -59,14 +59,14 @@ const Config = (function() {
         browser.experiments.aboutConfigPrefs.getBool("enabled").then(value => {
           this._onEnabledPrefChanged(value);
         });
-      } else if (name === "branch") {
-        browser.experiments.aboutConfigPrefs.getString("branch").then(value => {
-          this._onBranchPrefChanged(value);
+      } else if (name === "variation") {
+        browser.experiments.aboutConfigPrefs.getString("variation").then(value => {
+          this._onVariationPrefChanged(value);
         });
       }
     }
 
-    _onEnabledPrefChanged() {
+    _onEnabledPrefChanged(value) {
       if (value !== undefined) {
         this._neverShowAgain = !value;
         if (value) {
@@ -77,31 +77,31 @@ const Config = (function() {
       }
     }
 
-    _onBranchPrefChanged(branchPref) {
-      if (UIVariants.includes(branchPref)) {
-        this.uiVariant = branchPref;
+    _onVariationPrefChanged(variationPref) {
+      if (UIVariants.includes(variationPref)) {
+        this.uiVariant = variationPref;
         return true;
-      } else {
-        // If an invalid value was used, just reset the addon's
-        // state and pick a new UI variant (useful for testing).
-        this._selectRandomUIVariant();
-        this._lastPromptTime = 0;
-        for (const key of Object.keys(this._domainsToCheck)) {
-          this._domainsToCheck[key] = 0;
-        }
-        this.save({
-          lastPromptTime: this._lastPromptTime,
-          domainsToCheck: this._domainsToCheck,
-        });
-        return false;
       }
+
+      // If an invalid value was used, just reset the addon's
+      // state and pick a new UI variant (useful for testing).
+      this._selectRandomUIVariant();
+      this._lastPromptTime = 0;
+      for (const key of Object.keys(this._domainsToCheck)) {
+        this._domainsToCheck[key] = 0;
+      }
+      this.save({
+        lastPromptTime: this._lastPromptTime,
+        domainsToCheck: this._domainsToCheck,
+      });
+      return false;
     }
 
     _selectRandomUIVariant() {
       this.uiVariant = UIVariants[Math.floor(Math.random() * UIVariants.length)];
 
       if (this._testingMode) {
-        browser.experiments.aboutConfigPrefs.setString("branch", this._uiVariant);
+        browser.experiments.aboutConfigPrefs.setString("variation", this._uiVariant);
       }
     }
 
@@ -111,10 +111,10 @@ const Config = (function() {
         browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getBool("enabled"),
-        browser.experiments.aboutConfigPrefs.getString("branch"),
+        browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
       ]).then(([buildID, platform, releaseChannel,
-                enabledPref, branchPref, otherPrefs]) => {
+                enabledPref, variationPref, otherPrefs]) => {
         this._buildID = buildID;
         this._platform = platform;
         this._releaseChannel = releaseChannel;
@@ -129,8 +129,8 @@ const Config = (function() {
 
         // Testers may use an about:config flag to toggle the UI variant.
         // They may also use an invalid value to reset our config.
-        if (this._testingMode && branchPref !== undefined) {
-          if (this._onBranchPrefChanged(branchPref)) {
+        if (this._testingMode && variationPref !== undefined) {
+          if (this._onVariationPrefChanged(variationPref)) {
             delete otherPrefs.uiVariant;
           } else {
             otherPrefs = {};

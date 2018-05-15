@@ -71,16 +71,16 @@
     "message": "Description"
   },
 
-  "titleInitialPromptNoContext": {
+  "titleInitialPromptBasic": {
     "message": "Are you satisfied with how this website works in Firefox?"
   },
-  "textInitialPromptNoContext": {
+  "textInitialPromptBasic": {
     "message": "Help us make the web better for everyone."
   },
-  "titleInitialPrompt": {
+  "titleInitialPromptFriendly": {
     "message": "Firefox wants to know: are you satisfied with the way this website is working?"
   },
-  "textInitialPrompt": {
+  "textInitialPromptFriendly": {
     "message": "Help us to better detect issues with the web."
   },
   "linkInitialPrompt": {
