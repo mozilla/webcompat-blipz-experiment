@@ -11,6 +11,13 @@
         "async": true
       },
       {
+        "name": "getPlatform",
+        "type": "function",
+        "description": "Gets the platform",
+        "parameters": [],
+        "async": true
+      },
+      {
         "name": "getUpdateChannel",
         "type": "function",
         "description": "Gets the update channel",

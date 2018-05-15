@@ -64,11 +64,13 @@ const Config = (function() {
     load() {
       return Promise.all([
         browser.experiments.browserInfo.getBuildID(),
+        browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getBool("enabled"),
         browser.storage.local.get(),
-      ]).then(([buildID, releaseChannel, enabledPref, otherPrefs]) => {
+      ]).then(([buildID, platform, releaseChannel, enabledPref, otherPrefs]) => {
         this._buildID = buildID;
+        this._platform = platform;
         this._releaseChannel = releaseChannel;
 
         // The "never show again" option is stored in about:config
@@ -138,6 +140,17 @@ const Config = (function() {
       return undefined;
     }
 
+    isPromptableURL(url) {
+      if (!(url instanceof URL)) {
+        try {
+          url = new URL(url);
+        } catch (_) {
+          return false;
+        }
+      }
+      return ["http:", "https:"].includes(url.protocol);
+    }
+
     shouldPromptUserNow(domain) {
       // Prompt at most once a day, at a minimum once every three days,
       // for a maximum of five prompts per user and one prompt per domain.
@@ -186,6 +199,10 @@ const Config = (function() {
       return this._releaseChannel;
     }
 
+    get platform() {
+      return this._platform;
+    }
+
     get buildID() {
       return this._buildID;
     }
@@ -202,7 +219,7 @@ async function shouldPromptUser(navDetails) {
   try {
     const url = new URL(navDetails.url);
     return !Config.neverShowAgain &&
-           ["http:", "https:"].includes(url.protocol) &&
+           Config.isPromptableURL(url) &&
            Config.shouldPromptUserNow(url.host) &&
            (!Config.skipPrivateBrowsingTabs ||
             !(await browser.tabs.get(navDetails.tabId)).incognito);
@@ -224,7 +241,6 @@ const portToPageAction = (function() {
     port.onMessage.addListener(onMessageFromPageAction);
     port.onDisconnect.addListener(function() {
       port = undefined;
-      gCurrentlyPromptingTab = undefined;
       TabState.get().then(tabState => {
         // When the popup is hidden.
         updatePageActionIcon(tabState.tabId);
@@ -351,6 +367,9 @@ const TabState = (function() {
         if (incognito !== undefined) {
           report.incognito = incognito;
         }
+        report.buildID = Config.buildID;
+        report.platform = Config.platform;
+        report.releaseChannel = Config.releaseChannel;
         if ("includeURL" in report !== undefined) {
           if (report.includeURL) {
             report.url = this._url;
@@ -399,8 +418,9 @@ const TabState = (function() {
 
 async function onTabChanged(info) {
   const { tabId } = info;
+  const { url } = await browser.tabs.get(tabId);
 
-  if (Config.neverShowAgain) {
+  if (Config.neverShowAgain || !Config.isPromptableURL(url)) {
     browser.pageAction.hide(tabId);
     return;
   }
@@ -412,7 +432,7 @@ async function onTabChanged(info) {
   }
 
   if ((gCurrentlyPromptingTab || {}).id === tabId) {
-    await showPageAction(tabId);
+    await popupPageAction(tabId);
 
     const tabState = await TabState.get(tabId);
     tabState.maybeUpdatePageAction();
@@ -437,7 +457,8 @@ async function onNavigationCommitted(navDetails) {
   }
 
   // Show the page action icon if it's been shown before.
-  if (!Config.neverShowAgain && Config.lastPromptTime) {
+  if (!Config.neverShowAgain && Config.lastPromptTime &&
+      Config.isPromptableURL(url)) {
     updatePageActionIcon(tabId);
     await browser.pageAction.show(tabId);
   }
@@ -456,7 +477,7 @@ async function onNavigationCompleted(navDetails) {
     gCurrentlyPromptingTab = {id: tabId, url};
     await updatePageActionIcon(tabId);
     await browser.pageAction.show(tabId);
-    showPageAction(tabId);
+    popupPageAction(tabId);
     Config.onUserPrompted(new URL(url).host);
   }
 }
@@ -602,7 +623,7 @@ function getActiveTab() {
   });
 }
 
-async function showPageAction(tabId) {
+async function popupPageAction(tabId) {
   return browser.experiments.pageAction.forceOpenPopup();
 }
 

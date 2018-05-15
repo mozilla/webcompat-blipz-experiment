@@ -20,6 +20,9 @@ this.browserInfo = class extends ExtensionAPI {
           async getUpdateChannel() {
             return AppConstants.MOZ_UPDATE_CHANNEL;
           },
+          async getPlatform() {
+            return AppConstants.platform;
+          },
         },
       },
     };
