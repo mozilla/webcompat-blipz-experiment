@@ -6,6 +6,11 @@
       {
         "name": "onPrefChange",
         "type": "function",
+        "parameters": [{
+          "name": "name",
+          "type": "string",
+          "description": "The preference which changed"
+        }],
         "extraParameters": [
           {
             "name": "name",

@@ -9,10 +9,13 @@
 let gCurrentlyPromptingTab;
 
 const Config = (function() {
-  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall(["enabled"]);
+  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall(["enabled", "branch"]);
+
+  const UIVariants = ["more-context", "little-context", "no-context"];
 
   class Config {
     constructor() {
+      this._testingMode = true;
       this._neverShowAgain = false;
       this._skipPrivateBrowsingTabs = true;
       this._lastPromptTime = 0;
@@ -46,19 +49,60 @@ const Config = (function() {
 
       browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
         this._onAboutConfigPrefChanged.bind(this), "enabled");
+
+      browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
+        this._onAboutConfigPrefChanged.bind(this), "branch");
     }
 
-    _onAboutConfigPrefChanged() {
-      browser.experiments.aboutConfigPrefs.getBool("enabled").then(value => {
-        if (value !== undefined) {
-          this._neverShowAgain = !value;
-          if (value) {
-            activate();
-          } else {
-            deactivate();
-          }
+    _onAboutConfigPrefChanged(name) {
+      if (name === "enabled") {
+        browser.experiments.aboutConfigPrefs.getBool("enabled").then(value => {
+          this._onEnabledPrefChanged(value);
+        });
+      } else if (name === "branch") {
+        browser.experiments.aboutConfigPrefs.getString("branch").then(value => {
+          this._onBranchPrefChanged(value);
+        });
+      }
+    }
+
+    _onEnabledPrefChanged() {
+      if (value !== undefined) {
+        this._neverShowAgain = !value;
+        if (value) {
+          activate();
+        } else {
+          deactivate();
         }
-      });
+      }
+    }
+
+    _onBranchPrefChanged(branchPref) {
+      if (UIVariants.includes(branchPref)) {
+        this.uiVariant = branchPref;
+        return true;
+      } else {
+        // If an invalid value was used, just reset the addon's
+        // state and pick a new UI variant (useful for testing).
+        this._selectRandomUIVariant();
+        this._lastPromptTime = 0;
+        for (const key of Object.keys(this._domainsToCheck)) {
+          this._domainsToCheck[key] = 0;
+        }
+        this.save({
+          lastPromptTime: this._lastPromptTime,
+          domainsToCheck: this._domainsToCheck,
+        });
+        return false;
+      }
+    }
+
+    _selectRandomUIVariant() {
+      this.uiVariant = UIVariants[Math.floor(Math.random() * UIVariants.length)];
+
+      if (this._testingMode) {
+        browser.experiments.aboutConfigPrefs.setString("branch", this._uiVariant);
+      }
     }
 
     load() {
@@ -67,8 +111,10 @@ const Config = (function() {
         browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getBool("enabled"),
+        browser.experiments.aboutConfigPrefs.getString("branch"),
         browser.storage.local.get(),
-      ]).then(([buildID, platform, releaseChannel, enabledPref, otherPrefs]) => {
+      ]).then(([buildID, platform, releaseChannel,
+                enabledPref, branchPref, otherPrefs]) => {
         this._buildID = buildID;
         this._platform = platform;
         this._releaseChannel = releaseChannel;
@@ -79,6 +125,16 @@ const Config = (function() {
         // from them being in about:config anyway.
         if (enabledPref !== undefined) {
           this._neverShowAgain = !enabledPref;
+        }
+
+        // Testers may use an about:config flag to toggle the UI variant.
+        // They may also use an invalid value to reset our config.
+        if (this._testingMode && branchPref !== undefined) {
+          if (this._onBranchPrefChanged(branchPref)) {
+            delete otherPrefs.uiVariant;
+          } else {
+            otherPrefs = {};
+          }
         }
 
         // The list of domains to check needs special handling, as the list may
@@ -104,6 +160,11 @@ const Config = (function() {
         // we will have written them out with a valid value to begin with.
         for (const [name, value] of Object.entries(otherPrefs)) {
           this[`_${name}`] = value;
+        }
+
+        // If a valid UI variant has not otherwise been chosen yet, select one now.
+        if (!this._uiVariant) {
+          this._selectRandomUIVariant();
         }
       });
     }
@@ -193,6 +254,15 @@ const Config = (function() {
     set skipPrivateBrowsingTabs(bool) {
       this._skipPrivateBrowsingTabs = bool;
       this.save({skipPrivateBrowsingTabs: bool});
+    }
+
+    get uiVariant() {
+      return this._uiVariant;
+    }
+
+    set uiVariant(uiVariant) {
+      this._uiVariant = uiVariant;
+      this.save({uiVariant});
     }
 
     get releaseChannel() {
@@ -288,6 +358,7 @@ const TabState = (function() {
         const info = Object.assign({}, this._report, {
           tabId: this._tabId,
           slide: this._slide,
+          uiVariant: Config.uiVariant,
         });
         let update;
         if (!onlyProperties) {
@@ -367,6 +438,7 @@ const TabState = (function() {
         if (incognito !== undefined) {
           report.incognito = incognito;
         }
+        report.branch = Config.uiVariant;
         report.buildID = Config.buildID;
         report.platform = Config.platform;
         report.releaseChannel = Config.releaseChannel;

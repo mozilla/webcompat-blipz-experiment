@@ -71,6 +71,12 @@
     "message": "Description"
   },
 
+  "titleInitialPromptNoContext": {
+    "message": "Are you satisfied with how this website works in Firefox?"
+  },
+  "textInitialPromptNoContext": {
+    "message": "Help us make the web better for everyone."
+  },
   "titleInitialPrompt": {
     "message": "Firefox wants to know: are you satisfied with the way this website is working?"
   },

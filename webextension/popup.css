@@ -165,6 +165,14 @@ section > h1 + button:only-of-type {
 #thankYou > h1 {
   margin-top: 1.75em;
 }
+.no-context #initialPrompt a,
+.no-context #thankYou p,
+.no-context #thankYouFeedback p,
+.no-context #thankYouFeedback a,
+.little-context #thankYouFeedback p,
+.little-context #thankYouFeedback a {
+  display: none;
+}
 #thankYouFeedback > a {
   float: right;
   margin-top: 1.5em;
@@ -228,6 +236,8 @@ button[data-action="back"] {
 #initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
 #initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
 #initialPrompt > a::before { content: "__MSG_linkInitialPrompt__"; }
+.no-context #initialPrompt > h1::before { content: "__MSG_titleInitialPromptNoContext__"; }
+.no-context #initialPrompt > p::before { content: "__MSG_textInitialPromptNoContext__"; }
 
 #initialPrompt > label::after { content: "__MSG_labelNeverShowAgain__"; }
 
