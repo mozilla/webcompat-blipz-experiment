@@ -34,7 +34,7 @@ this.aboutConfigPrefs = class extends ExtensionAPI {
         aboutConfigPrefs: {
           onPrefChange: new EventManager(context, prefChangeEventName, (fire, name) => {
             const callback = () => {
-              fire.async();
+              fire.async(name);
             };
             Services.prefs.addObserver(`${prefBranchPrefix}${name}`, callback);
             return () => {

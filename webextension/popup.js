@@ -89,6 +89,13 @@ function onMessage(update) {
     return;
   }
 
+  if (update.uiVariant && gState.uiVariant !== update.uiVariant) {
+    if (gState.uiVariant) {
+      document.documentElement.classList.remove(gState.uiVariant);
+    }
+    document.documentElement.classList.add(update.uiVariant);
+  }
+
   Object.assign(gState, update);
 
   if (update.slide) {

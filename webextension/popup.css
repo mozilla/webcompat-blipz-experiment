@@ -225,8 +225,17 @@ button[data-action="back"] {
   background-size: 12px 12px;
 }
 
-#initialPrompt > h1::before { content: "__MSG_titleInitialPrompt__"; }
-#initialPrompt > p::before { content: "__MSG_textInitialPrompt__"; }
+.no-context #initialPrompt a,
+.no-context #thankYou p,
+.no-context #thankYouFeedback p,
+.no-context #thankYouFeedback a,
+.little-context #thankYouFeedback p,
+.little-context #thankYouFeedback a {
+  display: none;
+}
+
+#initialPrompt > h1::before { content: "__MSG_titleInitialPromptFriendly__"; }
+#initialPrompt > p::before { content: "__MSG_textInitialPromptFriendly__"; }
 #initialPrompt > a::before { content: "__MSG_linkInitialPrompt__"; }
 
 #initialPrompt > label::after { content: "__MSG_labelNeverShowAgain__"; }
@@ -241,6 +250,9 @@ button[data-action="back"] {
 #feedbackForm > p::after { content: "__MSG_textFeedbackForm__"; }
 #feedbackForm > label::after { content: "__MSG_labelIncludeURL__"; }
 #issueRemoveScreenshot > p::after { content: "__MSG_textScreenshotOfIssue__"; }
+
+.no-context #initialPrompt > h1::before { content: "__MSG_titleInitialPromptBasic_"; }
+.no-context #initialPrompt > p::before { content: "__MSG_textInitialPromptBasic__"; }
 
 button[data-action="ok"]::before { content: "__MSG_buttonOK__"; }
 button[data-action="yes"]::before { content: "__MSG_buttonYes__"; }
