@@ -251,7 +251,7 @@ button[data-action="back"] {
 #feedbackForm > label::after { content: "__MSG_labelIncludeURL__"; }
 #issueRemoveScreenshot > p::after { content: "__MSG_textScreenshotOfIssue__"; }
 
-.no-context #initialPrompt > h1::before { content: "__MSG_titleInitialPromptBasic_"; }
+.no-context #initialPrompt > h1::before { content: "__MSG_titleInitialPromptBasic__"; }
 .no-context #initialPrompt > p::before { content: "__MSG_textInitialPromptBasic__"; }
 
 button[data-action="ok"]::before { content: "__MSG_buttonOK__"; }

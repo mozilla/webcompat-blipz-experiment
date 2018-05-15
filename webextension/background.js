@@ -314,6 +314,10 @@ const portToPageAction = (function() {
       TabState.get().then(tabState => {
         // When the popup is hidden.
         updatePageActionIcon(tabState.tabId);
+        if (tabState.isShowingThankYouPage()) {
+          tabState.reset();
+          gCurrentlyPromptingTab = undefined;
+        }
         if (Config.neverShowAgain) {
           deactivate();
         }
@@ -427,6 +431,10 @@ const TabState = (function() {
       await updatePageActionIcon(this._tabId);
     }
 
+    isShowingThankYouPage() {
+      return ["thankYou", "thankYouFeedback"].includes(this._slide);
+    }
+
     async submitReport() {
       if (this._reportSubmitPromise) {
         return this._reportSubmitPromise;
@@ -497,6 +505,13 @@ async function onTabChanged(info) {
     return;
   }
 
+  // Coming back to a tab on a thank-you page starts anew.
+  const tabState = await TabState.get(tabId);
+  if (tabState.isShowingThankYouPage()) {
+    tabState.reset();
+    gCurrentlyPromptingTab = undefined;
+  }
+
   await updatePageActionIcon(tabId);
 
   if (Config.lastPromptTime) {
@@ -505,8 +520,6 @@ async function onTabChanged(info) {
 
   if ((gCurrentlyPromptingTab || {}).id === tabId) {
     await popupPageAction(tabId);
-
-    const tabState = await TabState.get(tabId);
     tabState.maybeUpdatePageAction();
   }
 }
