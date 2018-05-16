@@ -36,7 +36,7 @@
       </h2>
       <p></p>
       <form>
-        <select name="issueType" required>
+        <select name="type" required>
           <option value="" hidden></option>
           <option value="desktopNotMobile"></option>
           <option value="siteUnusable"></option>
@@ -44,17 +44,37 @@
           <option value="playbackFailure"></option>
           <option value="other"></option>
         </select>
-        <button id="issueTakeScreenshot"></button>
-        <div id="issueRemoveScreenshot">
+        <button class="takeScreenshot"></button>
+        <div class="screenshot">
           <p></p>
           <img src="screenshot.jpg" alt="" />
           <button></button>
         </div>
-        <textarea name="issueDescription" rows="1"></textarea>
+        <textarea name="description" rows="1"></textarea>
       </form>
-      <label>
-        <input type="checkbox" name="includeURL" checked />
-      </label>
+      <a href="#" data-action="showFeedbackDetails"></a>
+      <button data-action="cancel"></button>
+      <button data-action="submit" class="emphasize"></button>
+    </section>
+    <section id="feedbackDetails">
+      <h2>
+        <button data-action="back"></button>
+      </h2>
+      <table>
+        <tr data-detail="url"><th></th><td></td></tr>
+        <tr data-detail="type"><th></th><td></td></tr>
+        <tr data-detail="description"><th></th><td></td></tr>
+        <tr data-detail="channel"><th></th><td></td></tr>
+        <tr data-detail="appVersion"><th></th><td></td></tr>
+        <tr data-detail="platform"><th></th><td></td></tr>
+        <tr data-detail="buildID"><th></th><td></td></tr>
+        <tr data-detail="uiVariant"><th></th><td></td></tr>
+      </table>
+      <div class="screenshot">
+        <p></p>
+        <img src="screenshot.jpg" alt="" />
+      </div>
+      <p></p>
       <button data-action="cancel"></button>
       <button data-action="submit" class="emphasize"></button>
     </section>

@@ -71,8 +71,10 @@ section > h2 {
 section > a,
 section > p,
 section > h1,
+section > div,
 section > form,
-section > label {
+section > label,
+section > table {
   margin-left: 75px;
   margin-right: 45px;
 }
@@ -108,9 +110,21 @@ section > label {
 }
 section > p,
 section > button,
-section > label {
+section > label,
+section > table {
   font-size: 1rem;
   line-height: 1.25em;
+}
+section > table tr {
+  display: block;
+}
+section > table th {
+  font-weight: bold;
+  padding-right: 0.5em;
+}
+section > table th,
+section > table td {
+  display: inline;
 }
 section > form > * {
   display: block;
@@ -155,13 +169,6 @@ button:focus {
   color: #fff;
   background-color: #0260de;
 }
-section > button:only-of-type {
-  margin-top: 0.75em;
-  width: 100%;
-}
-section > h1 + button:only-of-type {
-  margin-top: 2.5em;
-}
 #thankYou > h1 {
   margin-top: 1.75em;
 }
@@ -178,18 +185,18 @@ section > h1 + button:only-of-type {
   margin-bottom: 0;
 }
 
-#issueTakeScreenshot,
-#issueRemoveScreenshot {
+.takeScreenshot,
+.screenshot {
   display: block;
 }
-#issueRemoveScreenshot {
+.screenshot {
   padding-right: 16px;
 }
-#issueRemoveScreenshot > * {
+.screenshot > * {
   vertical-align: top;
   display: inline-block;
 }
-#issueRemoveScreenshot > img {
+.screenshot > img {
   cursor: pointer;
   display: none;
   margin-left: 0.5em;
@@ -198,7 +205,7 @@ section > h1 + button:only-of-type {
   border: 1px solid #eee;
   border-radius: 4px;
 }
-#issueRemoveScreenshot > button {
+.screenshot > button {
   padding: 0;
   width: 30px;
   height: 30px;
@@ -213,6 +220,13 @@ section > h1 + button:only-of-type {
   border-radius: 15px;
   box-shadow: 0 2px 2px rgba(128, 128, 128, 0.2);
 }
+section > button:only-of-type {
+  margin-top: 0.75em;
+  width: 100%;
+}
+section > h1 + button:only-of-type {
+  margin-top: 2.5em;
+}
 #thankYou,
 #thankYouFeedback {
   background-image: url(icons/done.svg);
@@ -223,6 +237,14 @@ section > h1 + button:only-of-type {
 button[data-action="back"] {
   background-image: url(icons/back.svg);
   background-size: 12px 12px;
+}
+
+#feedbackDetails .screenshot {
+  margin-top: 1em;
+}
+#feedbackDetails p {
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 
 .no-context #initialPrompt a,
@@ -246,13 +268,26 @@ button[data-action="back"] {
 #thankYouFeedback > p::before { content: "__MSG_textThankYouFeedback__"; }
 #thankYouFeedback > a::after { content: "__MSG_labelLearnMore__"; }
 
+.screenshot > p::after { content: "__MSG_textScreenshotOfIssue__"; }
+
 #feedbackForm > h2::before { content: "__MSG_titleFeedbackForm__"; }
 #feedbackForm > p::after { content: "__MSG_textFeedbackForm__"; }
-#feedbackForm > label::after { content: "__MSG_labelIncludeURL__"; }
-#issueRemoveScreenshot > p::after { content: "__MSG_textScreenshotOfIssue__"; }
+#feedbackForm > a::after { content: "__MSG_linkShowFeedbackDetails__"; }
+
+#feedbackDetails > h2::before { content: "__MSG_titleFeedbackDetails__"; }
+#feedbackDetails > p::before { content: "__MSG_textFeedbackDetails__"; }
 
 .no-context #initialPrompt > h1::before { content: "__MSG_titleInitialPromptBasic__"; }
 .no-context #initialPrompt > p::before { content: "__MSG_textInitialPromptBasic__"; }
+
+[data-detail="url"] > th::before { content: "__MSG_detailLabel_url__"; }
+[data-detail="type"] > th::before { content: "__MSG_detailLabel_type__"; }
+[data-detail="description"] > th::before { content: "__MSG_detailLabel_description__"; }
+[data-detail="channel"] > th::before { content: "__MSG_detailLabel_channel__"; }
+[data-detail="appVersion"] > th::before { content: "__MSG_detailLabel_appVersion__"; }
+[data-detail="platform"] > th::before { content: "__MSG_detailLabel_platform__"; }
+[data-detail="buildID"] > th::before { content: "__MSG_detailLabel_buildID__"; }
+[data-detail="uiVariant"] > th::before { content: "__MSG_detailLabel_experimentBranch__"; }
 
 button[data-action="ok"]::before { content: "__MSG_buttonOK__"; }
 button[data-action="yes"]::before { content: "__MSG_buttonYes__"; }
@@ -260,7 +295,7 @@ button[data-action="no"]::before { content: "__MSG_buttonNo__"; }
 button[data-action="submit"]::before { content: "__MSG_buttonSubmit__"; }
 button[data-action="cancel"]::before { content: "__MSG_buttonCancel__"; }
 
-#issueTakeScreenshot::before {
+.takeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/screenshot.svg) no-repeat;
   padding-left: 24px;

@@ -31,6 +31,31 @@
     "message": "Yes"
   },
 
+  "detailLabel_appVersion": {
+    "message": "Version:"
+  },
+  "detailLabel_buildID": {
+    "message": "Build ID:"
+  },
+  "detailLabel_channel": {
+    "message": "Channel:"
+  },
+  "detailLabel_description": {
+    "message": "Description:"
+  },
+  "detailLabel_experimentBranch": {
+    "message": "Experiment Branch:"
+  },
+  "detailLabel_platform": {
+    "message": "Platform:"
+  },
+  "detailLabel_type": {
+    "message": "Type:"
+  },
+  "detailLabel_url": {
+    "message": "URL:"
+  },
+
   "errorScreenshotFail": {
     "message": "Error taking a screenshot"
   },
@@ -54,9 +79,6 @@
     "message": "Something else"
   },
 
-  "labelIncludeURL": {
-    "message": "Include the address of this website with your feedback"
-  },
   "labelLearnMore": {
     "message": "Learn More"
   },
@@ -103,6 +125,16 @@
   },
   "textFeedbackForm": {
     "message": "Please tell us more about your experience on this site so we can understand and fix the issue."
+  },
+
+  "titleFeedbackDetails": {
+    "message": "Feedback details"
+  },
+  "textFeedbackDetails": {
+    "message": "This data is non-public. Only certain Mozilla employees will have access to this data."
+  },
+  "linkShowFeedbackDetails": {
+    "message": "See what data I am sending"
   },
 
   "textScreenshotOfIssue": {

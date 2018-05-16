@@ -107,14 +107,16 @@ const Config = (function() {
 
     load() {
       return Promise.all([
+        browser.experiments.browserInfo.getAppVersion(),
         browser.experiments.browserInfo.getBuildID(),
         browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getBool("enabled"),
         browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
-      ]).then(([buildID, platform, releaseChannel,
+      ]).then(([appVersion, buildID, platform, releaseChannel,
                 enabledPref, variationPref, otherPrefs]) => {
+        this._appVersion = appVersion;
         this._buildID = buildID;
         this._platform = platform;
         this._releaseChannel = releaseChannel;
@@ -265,16 +267,20 @@ const Config = (function() {
       this.save({uiVariant});
     }
 
-    get releaseChannel() {
-      return this._releaseChannel;
+    get appVersion() {
+      return this._appVersion;
+    }
+
+    get buildID() {
+      return this._buildID;
     }
 
     get platform() {
       return this._platform;
     }
 
-    get buildID() {
-      return this._buildID;
+    get releaseChannel() {
+      return this._releaseChannel;
     }
   }
 
@@ -374,6 +380,11 @@ const TabState = (function() {
               update[name] = value;
             }
           }
+          for (const name of onlyProperties) {
+            if (!(name in update)) {
+              update[name] = undefined;
+            }
+          }
         }
         if (Object.keys(update).length) {
           portToPageAction.send(update);
@@ -383,7 +394,7 @@ const TabState = (function() {
 
     reset() {
       this._slide = "initialPrompt";
-      this._report = {includeURL: true};
+      this.updateReport();
     }
 
     get url() {
@@ -412,17 +423,36 @@ const TabState = (function() {
       return this._report.screenshot;
     }
 
-    updateReport(data) {
-      if (Object.keys(data).length) {
-        for (const [name, value] of Object.entries(data)) {
+    updateReport(updates) {
+      if (updates === undefined) {
+        this._report = {};
+      } else {
+        for (const [name, value] of Object.entries(updates)) {
           if (value === undefined) {
             delete this._report[name];
           } else {
             this._report[name] = value;
           }
         }
-      } else {
-        this._report = {};
+      }
+
+      if (!this._report.appVersion) {
+        this._report.version = Config.appVersion;
+      }
+      if (!this._report.experimentBranch) {
+        this._report.experimentBranch = Config.uiVariant;
+      }
+      if (!this._report.buildID) {
+        this._report.buildID = Config.buildID;
+      }
+      if (!this._report.platform) {
+        this._report.platform = Config.platform;
+      }
+      if (!this._report.releaseChannel) {
+        this._report.channel = Config.releaseChannel;
+      }
+      if (!this._report.url) {
+        this._report.url = this._url;
       }
     }
 
@@ -442,21 +472,7 @@ const TabState = (function() {
 
       this._reportSubmitPromise = new Promise(async (resolve, reject) => {
         const report = this._report;
-        const { incognito } = await browser.tabs.get(this._tabId);
-        if (incognito !== undefined) {
-          report.incognito = incognito;
-        }
-        report.branch = Config.uiVariant;
-        report.buildID = Config.buildID;
-        report.platform = Config.platform;
-        report.releaseChannel = Config.releaseChannel;
-        if ("includeURL" in report !== undefined) {
-          if (report.includeURL) {
-            report.url = this._url;
-          }
-          delete report.includeURL;
-        }
-        this.updateReport({});
+        this.updateReport();
         return backgroundSendReport(report).then(() => {
           delete this._reportSubmitPromise;
           resolve();
@@ -568,7 +584,7 @@ async function onNavigationCompleted(navDetails) {
 }
 
 async function onMessageFromPageAction(message) {
-  const { tabId, type, action } = message;
+  const { tabId, command } = message;
 
   if ("neverShowAgain" in message) {
     const neverShowAgain = message.neverShowAgain;
@@ -582,16 +598,15 @@ async function onMessageFromPageAction(message) {
   const tabState = await TabState.get(tabId);
 
   delete message.tabId;
-  delete message.type;
-  delete message.action;
-  delete message.option;
+  delete message.command;
   if (Object.keys(message).length) {
     tabState.updateReport(message);
   }
 
-  switch (type) {
+  switch (command) {
     case "removeScreenshot": {
       tabState.updateReport({screenshot: undefined});
+      tabState.maybeUpdatePageAction(["screenshot"]);
       break;
     }
     case "showScreenshot": {
@@ -615,8 +630,8 @@ async function onMessageFromPageAction(message) {
       });
       return true;
     }
-    case "action": {
-      handleButtonClick(action, tabState);
+    default: {
+      handleButtonClick(command, tabState);
       break;
     }
   }
@@ -652,7 +667,7 @@ function hidePageActionOnEveryTab() {
   });
 }
 
-async function handleButtonClick(action, tabState) {
+async function handleButtonClick(command, tabState) {
   if (Config.neverShowAgain) {
     browser.pageAction.hide(tabState.tabId);
     return;
@@ -660,7 +675,7 @@ async function handleButtonClick(action, tabState) {
 
   switch (tabState.slide) {
     case "initialPrompt": {
-      const userReportsProblem = action !== "yes";
+      const userReportsProblem = command !== "yes";
       tabState.updateReport({userReportsProblem});
       if (!userReportsProblem) {
         tabState.submitReport();
@@ -672,16 +687,33 @@ async function handleButtonClick(action, tabState) {
       break;
     }
     case "feedbackForm": {
-      if (action === "submit") {
+      if (command === "submit") {
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
-      } else if (action === "back") {
+      } else if (command === "showFeedbackDetails") {
+        tabState.slide = "feedbackDetails";
+        tabState.maybeUpdatePageAction(["type", "description"]);
+      } else if (command === "back") {
         tabState.slide = "initialPrompt";
-      } else {
+      } else if (command === "cancel") {
         closePageAction();
         tabState.reset();
       }
       tabState.markAsVerified();
+      break;
+    }
+    case "feedbackDetails": {
+      if (command === "submit") {
+        tabState.submitReport();
+        tabState.slide = "thankYouFeedback";
+        tabState.markAsVerified();
+      } else if (command === "back") {
+        tabState.slide = "feedbackForm";
+      } else if (command === "cancel") {
+        closePageAction();
+        tabState.reset();
+        tabState.markAsVerified();
+      }
       break;
     }
     case "thankYou": {

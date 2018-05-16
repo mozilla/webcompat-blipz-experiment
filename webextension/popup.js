@@ -8,6 +8,15 @@
 
 const gState = {};
 
+const gIssueTypeLabels = {
+  "": "placeholderIssueType",
+  "desktopNotMobile": "issueLabelDesktopNotMobile",
+  "siteUnusable": "issueLabelSiteUnusable",
+  "brokenDesign": "issueLabelBrokenDesign",
+  "playbackFailure": "issueLabelPlaybackFailure",
+  "other": "issueLabelOther",
+};
+
 const portToBGScript = (function() {
   let port;
 
@@ -35,21 +44,14 @@ const portToBGScript = (function() {
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", handleClick);
 
-  for (const [value, msgId] of Object.entries({
-    "": "placeholderIssueType",
-    "desktopNotMobile": "issueLabelDesktopNotMobile",
-    "siteUnusable": "issueLabelSiteUnusable",
-    "brokenDesign": "issueLabelBrokenDesign",
-    "playbackFailure": "issueLabelPlaybackFailure",
-    "other": "issueLabelOther",
-  })) {
+  for (const [value, msgId] of Object.entries(gIssueTypeLabels)) {
     document.querySelector(`option[value="${value}"]`).innerText =
       browser.i18n.getMessage(msgId);
   }
 
   for (const [selector, msgId] of Object.entries({
-    "[name=issueType]": "placeholderIssueType",
-    "[name=issueDescription]": "placeholderDescription",
+    "[name=type]": "placeholderIssueType",
+    "[name=description]": "placeholderDescription",
   })) {
     const input = document.querySelector(selector);
     input.placeholder = browser.i18n.getMessage(msgId);
@@ -61,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  for (const name of ["neverShowAgain", "includeURL"]) {
+  for (const name of ["neverShowAgain"]) {
     const input = document.querySelector(`[name="${name}"]`);
 
     input.addEventListener("change", e => {
@@ -71,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  autosizeTextArea(document.querySelector("[name=issueDescription]"));
+  autosizeTextArea(document.querySelector("[name=description]"));
 });
 
 function autosizeTextArea(el) {
@@ -109,7 +111,7 @@ function onMessage(update) {
     }
   }
 
-  for (const name of ["issueType", "issueDescription"]) {
+  for (const name of ["type", "description"]) {
     if (gState[name]) {
       document.querySelector(`[name=${name}]`).value = gState[name];
     }
@@ -120,26 +122,52 @@ function onMessage(update) {
   } else {
     hideScreenshot();
   }
+
+  if (gState.slide === "feedbackDetails") {
+    const elem = document.querySelector("#feedbackDetails");
+
+    // Update each of the values in the table to match
+    // what we will send if "submit" is clicked now.
+    elem.querySelectorAll("[data-detail]").forEach(tr => {
+      const detail = tr.getAttribute("data-detail");
+      if (gState[detail]) {
+        tr.style.display = "";
+        let value = gState[detail];
+        if (detail === "type") {
+          value = browser.i18n.getMessage(gIssueTypeLabels[value]);
+        }
+        tr.querySelector("td").innerText = value;
+      } else {
+        tr.style.display = "none";
+      }
+    });
+  }
 }
 
 async function hideScreenshot() {
-  await portToBGScript.send({type: "removeScreenshot"});
-
-  const img = document.querySelector("img");
-  img.src = "";
-  img.style.display = "";
-
-  document.querySelector("#issueTakeScreenshot").style.display = "";
-  document.querySelector("#issueRemoveScreenshot").style.display = "none";
+  document.querySelectorAll(".takeScreenshot").forEach(elem => {
+    elem.style.display = "";
+  });
+  document.querySelectorAll(".screenshot").forEach(elem => {
+    elem.style.display = "none";
+  });
+  document.querySelectorAll(".screenshot > img").forEach(img => {
+    img.src = "";
+    img.style.display = "";
+  });
 }
 
 function showScreenshot(dataUrl) {
-  document.querySelector("#issueTakeScreenshot").style.display = "none";
-  document.querySelector("#issueRemoveScreenshot").style.display = "";
-
-  const img = document.querySelector("#issueRemoveScreenshot > img");
-  img.src = dataUrl;
-  img.style.display = "inline-block";
+  document.querySelectorAll(".takeScreenshot").forEach(elem => {
+    elem.style.display = "none";
+  });
+  document.querySelectorAll(".screenshot").forEach(elem => {
+    elem.style.display = "";
+  });
+  document.querySelectorAll(".screenshot > img").forEach(img => {
+    img.src = dataUrl;
+    img.style.display = "inline-block";
+  });
 }
 
 function handleClick(e) {
@@ -147,30 +175,30 @@ function handleClick(e) {
     return;
   }
 
-  if (e.target.matches("#issueRemoveScreenshot > button")) {
+  if (e.target.matches(".screenshot > button")) {
     e.preventDefault();
     hideScreenshot();
-    portToBGScript.send({type: "removeScreenshot"});
+    portToBGScript.send({command: "removeScreenshot"});
     return;
   }
 
-  if (e.target.matches("#issueRemoveScreenshot > img")) {
+  if (e.target.matches(".screenshot > img")) {
     e.preventDefault();
-    portToBGScript.send({type: "showScreenshot"});
+    portToBGScript.send({command: "showScreenshot"});
     return;
   }
 
-  if (e.target.id === "issueTakeScreenshot") {
+  if (e.target.matches(".takeScreenshot")) {
     e.preventDefault();
-    portToBGScript.send({type: "requestScreenshot"});
+    portToBGScript.send({command: "requestScreenshot"});
     return;
   }
 
-  if (e.target.nodeName === "BUTTON") {
+  const action = e.target.getAttribute("data-action");
+  if (action) {
     e.preventDefault();
-    const action = e.target.getAttribute("data-action");
-    const message = {type: "action", action};
-    if (action === "submit") {
+    const message = {command: action};
+    if (action === "submit" || action === "showFeedbackDetails") {
       const form = document.querySelector("form");
       if (!form.checkValidity()) {
         // force the first invalid element to be highlighted.
