@@ -4,6 +4,13 @@
     "description": "experimental API extensions to get browser info not exposed via web APIs",
     "functions": [
       {
+        "name": "getAppVersion",
+        "type": "function",
+        "description": "Gets the app version",
+        "parameters": [],
+        "async": true
+      },
+      {
         "name": "getBuildID",
         "type": "function",
         "description": "Gets the build ID",

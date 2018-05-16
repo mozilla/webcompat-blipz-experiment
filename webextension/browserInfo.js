@@ -14,6 +14,9 @@ this.browserInfo = class extends ExtensionAPI {
     return {
       experiments: {
         browserInfo: {
+          async getAppVersion() {
+            return AppConstants.MOZ_APP_VERSION;
+          },
           async getBuildID() {
             return Services.appinfo.appBuildID;
           },
