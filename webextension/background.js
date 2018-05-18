@@ -615,13 +615,6 @@ async function onNavigationCompleted(navDetails) {
     return;
   }
 
-  // If the user was already in mid-prompt on this tab,
-  // reopen the prompt.
-  if (gCurrentlyPromptingTab && gCurrentlyPromptingTab.id === tabId) {
-    await promptUser(tabId, url);
-    return;
-  }
-
   await maybePromptUser(tabId, url);
 }
 
