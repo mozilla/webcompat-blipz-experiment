@@ -274,6 +274,14 @@ const Config = (function() {
       return timeout;
     }
 
+    get testingMode() {
+      return this._testingMode;
+    }
+
+    get reportLanding() {
+      return "https://blipz-experiment-issues.herokuapp.com/new";
+    }
+
     get screenshotFormat() {
       return {format: "jpeg", quality: 75};
     }
@@ -342,9 +350,67 @@ async function shouldPromptUser(tabId, url) {
   }
 }
 
-function backgroundSendReport(report) {
-  console.info("Would submit this report: ", report);
-  return Promise.resolve();
+function yesOrNo(bool) {
+  return bool ? "yes" : "no";
+}
+
+function pingTelemetry(message) {
+  if (Config.testingMode) {
+    console.info("Pinging telemetry: ", message);
+    return false;
+  }
+
+  // TBD
+  return true;
+}
+
+function backgroundSendReport(data) {
+  data.type = browser.i18n.getMessage(`issueLabel${data.type}`);
+
+  const body = ["url", "type", "appVersion", "channel", "platform", "buildID",
+                "experimentBranch", "description"].map(function(name) {
+      const label = browser.i18n.getMessage(`detailLabel_${name}`);
+      const value = data[name] || "";
+      return `${label} ${value}`;
+    }).join("\n");
+
+  const domain = Config.findDomainMatch(new URL(data.url).host);
+
+  const report = {
+    title: `${domain} - ${data.type}`,
+    body,
+    labels: [`variant-${data.experimentBranch}`],
+  };
+
+  if (data.userPrompted) {
+    report.labels.push("user-prompted");
+  }
+
+  if (data.screenshot) {
+    report.screenshot = data.screenshot;
+  }
+
+  if (Config.testingMode) {
+    console.info("Would submit this report: ", report);
+    return Promise.resolve();
+  }
+
+  const fd = new FormData();
+  for (const [key, value] of Object.entries(report)) {
+    fd.append(key, value);
+  }
+  return fetch(Config.reportLanding, {
+    body: fd,
+    method: "POST",
+  }).then(async response => {
+    if (!response.ok) {
+      throw new DOMException(
+        `Got ${response.status} status from server: ${response.statusText}`,
+        "NetworkError");
+    }
+  }).catch(error => {
+    pingTelemetry({reportSendError: error.message});
+  });
 }
 
 const portToPageAction = (function() {
@@ -475,7 +541,7 @@ const TabState = (function() {
       }
 
       if (!this._report.appVersion) {
-        this._report.version = Config.appVersion;
+        this._report.appVersion = Config.appVersion;
       }
       if (!this._report.experimentBranch) {
         this._report.experimentBranch = Config.uiVariant;
@@ -677,6 +743,7 @@ async function promptUser(tabId, url) {
   await updatePageActionIcon(tabId);
   await browser.pageAction.show(tabId);
   popupPageAction(tabId);
+  (await TabState.get(tabId)).updateReport({userPrompted: true});
   Config.onUserPrompted(url);
 }
 
@@ -774,10 +841,9 @@ async function handleButtonClick(command, tabState) {
 
   switch (tabState.slide) {
     case "initialPrompt": {
-      const userReportsProblem = command !== "yes";
-      tabState.updateReport({userReportsProblem});
-      if (!userReportsProblem) {
-        tabState.submitReport();
+      const siteWorks = command === "yes";
+      pingTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
+      if (siteWorks) {
         tabState.slide = "thankYou";
         tabState.markAsVerified();
       } else {
