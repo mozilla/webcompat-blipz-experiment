@@ -9,7 +9,9 @@
 let gCurrentlyPromptingTab;
 
 const Config = (function() {
-  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall(["enabled", "variation"]);
+  browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall([
+    "enabled", "reportEndpoint", "variation"
+  ]);
 
   const UIVariants = ["more-context", "little-context", "no-context"];
 
@@ -77,6 +79,10 @@ const Config = (function() {
         browser.experiments.aboutConfigPrefs.getString("variation").then(value => {
           this._onVariationPrefChanged(value);
         });
+      } else if (name === "reportEndpoint") {
+        browser.experiments.aboutConfigPrefs.getString("reportEndpoint").then(value => {
+          this._onLandingPrefChanged(value);
+        });
       }
     }
 
@@ -111,6 +117,10 @@ const Config = (function() {
       return false;
     }
 
+    _onLandingPrefChanged(landingPref) {
+      this._reportLanding = landingPref;
+    }
+
     _selectRandomUIVariant() {
       this.uiVariant = UIVariants[Math.floor(Math.random() * UIVariants.length)];
 
@@ -126,10 +136,11 @@ const Config = (function() {
         browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getBool("enabled"),
+        browser.experiments.aboutConfigPrefs.getString("reportEndpoint"),
         browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
       ]).then(([appVersion, buildID, platform, releaseChannel,
-                enabledPref, variationPref, otherPrefs]) => {
+                enabledPref, landingPref, variationPref, otherPrefs]) => {
         this._appVersion = appVersion;
         this._buildID = buildID;
         this._platform = platform;
@@ -141,6 +152,15 @@ const Config = (function() {
         // from them being in about:config anyway.
         if (enabledPref !== undefined) {
           this._neverShowAgain = !enabledPref;
+        }
+
+        // Store the report landing URL in an about:config preference
+        // so that mochitests can more easily override the value.
+        if (landingPref !== undefined) {
+          this._onLandingPrefChanged(landingPref);
+        } else {
+          this._reportLanding = "https://blipz-experiment-issues.herokuapp.com/new";
+          browser.experiments.aboutConfigPrefs.setString("reportEndpoint", this._reportLanding);
         }
 
         // Testers may use an about:config flag to toggle the UI variant.
@@ -279,7 +299,7 @@ const Config = (function() {
     }
 
     get reportLanding() {
-      return "https://blipz-experiment-issues.herokuapp.com/new";
+      return this._reportLanding;
     }
 
     get screenshotFormat() {
@@ -371,7 +391,7 @@ function backgroundSendReport(data) {
                 "experimentBranch", "description"].map(function(name) {
       const label = browser.i18n.getMessage(`detailLabel_${name}`);
       const value = data[name] || "";
-      return `${label} ${value}`;
+      return `**${label}** ${value}`;
     }).join("\n");
 
   const domain = Config.findDomainMatch(new URL(data.url).host);
