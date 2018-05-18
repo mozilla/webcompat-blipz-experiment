@@ -52,6 +52,7 @@
   ],
   "background": {
     "scripts": [
+      "visitTimeTracker.js",
       "background.js"
     ]
   },

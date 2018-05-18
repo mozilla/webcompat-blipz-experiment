@@ -4,7 +4,7 @@
 
 "use strict";
 
-/* globals browser */
+/* globals browser, VisitTimeTracker */
 
 let gCurrentlyPromptingTab;
 
@@ -20,31 +20,31 @@ const Config = (function() {
       this._skipPrivateBrowsingTabs = true;
       this._lastPromptTime = 0;
       this._domainsToCheck = {
-        "accounts.google.com": 0,
-        "amazon.com": 0,
-        "amazon.in": 0,
-        "bing.com": 0,
-        "docs.google.com": 0,
-        "drive.google.com": 0,
-        "facebook.com": 0,
-        "flipkart.com": 0,
-        "github.com": 0,
-        "google.co.in": 0,
-        "google.com": 0,
-        "inbox.google.com": 0,
-        "instagram.com": 0,
-        "linkedin.com": 0,
-        "mail.google.com": 0,
-        "netflix.com": 0,
-        "pandora.com": 0,
-        "play.google.com": 0,
-        "reddit.com": 0,
-        "soundcloud.com": 0,
-        "theverge.com": 0,
-        "twitch.tv": 0,
-        "twitter.com": 0,
-        "web.whatsapp.com": 0,
-        "youtube.com": 0,
+        "accounts.google.com": {},
+        "amazon.com": {},
+        "amazon.in": {},
+        "bing.com": {},
+        "docs.google.com": {},
+        "drive.google.com": {},
+        "facebook.com": {},
+        "flipkart.com": {},
+        "github.com": {},
+        "google.co.in": {},
+        "google.com": {},
+        "inbox.google.com": {},
+        "instagram.com": {},
+        "linkedin.com": {},
+        "mail.google.com": {},
+        "netflix.com": {},
+        "pandora.com": {},
+        "play.google.com": {},
+        "reddit.com": {},
+        "soundcloud.com": {},
+        "theverge.com": {},
+        "twitch.tv": {},
+        "twitter.com": {},
+        "web.whatsapp.com": {},
+        "youtube.com": {},
       };
 
       browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
@@ -52,6 +52,20 @@ const Config = (function() {
 
       browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
         this._onAboutConfigPrefChanged.bind(this), "variation");
+
+      VisitTimeTracker.onUpdate.addListener(this._onVisitTimeUpdate.bind(this));
+    }
+
+    _onVisitTimeUpdate(details) {
+      // Log the total time each domain in active in a foreground tab
+      try {
+        const {url, duration} = details;
+        const domain = this._domainsToCheck[this.findDomainMatch(new URL(url).host)];
+        if (domain) {
+          domain.totalActiveTime = (domain.totalActiveTime || 0) + duration;
+          this.save({domainsToCheck: this._domainsToCheck});
+        }
+      } catch (_) { }
     }
 
     _onAboutConfigPrefChanged(name) {
@@ -88,7 +102,7 @@ const Config = (function() {
       this._selectRandomUIVariant();
       this._lastPromptTime = 0;
       for (const key of Object.keys(this._domainsToCheck)) {
-        this._domainsToCheck[key] = 0;
+        this._domainsToCheck[key] = {};
       }
       this.save({
         lastPromptTime: this._lastPromptTime,
@@ -184,10 +198,14 @@ const Config = (function() {
       return Promise.all(promises);
     }
 
-    onUserPrompted(domain) {
+    onUserPrompted(url) {
+      const domain = this.findDomainMatch(new URL(url).host);
+      if (!domain) {
+        return;
+      }
       const now = Date.now();
       this._lastPromptTime = now;
-      this._domainsToCheck[domain] = now;
+      this._domainsToCheck[domain].lastPromptTime = now;
       this.save({
         lastPromptTime: now,
         domainsToCheck: this._domainsToCheck,
@@ -229,7 +247,31 @@ const Config = (function() {
       }
 
       const domainMatch = this.findDomainMatch(domain);
-      return domainMatch && !this._domainsToCheck[domainMatch];
+      return domainMatch && !this._domainsToCheck[domainMatch].lastPromptTime;
+    }
+
+    cumulativeMillisecondsSpentOnDomain(url) {
+      try {
+        const domain = this.findDomainMatch(new URL(url).host);
+        return this._domainsToCheck[domain].totalActiveTime || 0;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    getDelayBeforePromptingForDomain(url) {
+      const minMillisecondsUserTimeOnDomainBeforePrompt = 65000;
+      const maxMillisecondsExtraRandomDelay = 5000;
+
+      const min = Math.max(0, minMillisecondsUserTimeOnDomainBeforePrompt -
+                              this.cumulativeMillisecondsSpentOnDomain(url));
+      const timeout = min + (Math.random() * maxMillisecondsExtraRandomDelay);
+
+      if (this._testingMode) {
+        console.info("Prompting user in", timeout / 1000, "seconds on", url);
+      }
+
+      return timeout;
     }
 
     get screenshotFormat() {
@@ -287,18 +329,14 @@ const Config = (function() {
   return new Config();
 }());
 
-async function shouldPromptUser(navDetails) {
-  if (gCurrentlyPromptingTab) {
-    return gCurrentlyPromptingTab.id === navDetails.tabId;
-  }
-
+async function shouldPromptUser(tabId, url) {
   try {
-    const url = new URL(navDetails.url);
+    url = new URL(url);
     return !Config.neverShowAgain &&
            Config.isPromptableURL(url) &&
            Config.shouldPromptUserNow(url.host) &&
            (!Config.skipPrivateBrowsingTabs ||
-            !(await browser.tabs.get(navDetails.tabId)).incognito);
+            !(await browser.tabs.get(tabId)).incognito);
   } catch (_) {
     return false;
   }
@@ -534,9 +572,13 @@ async function onTabChanged(info) {
     await browser.pageAction.show(tabId);
   }
 
-  if ((gCurrentlyPromptingTab || {}).id === tabId) {
-    await popupPageAction(tabId);
-    tabState.maybeUpdatePageAction();
+  if (gCurrentlyPromptingTab) {
+    if (gCurrentlyPromptingTab.id === tabId) {
+      await popupPageAction(tabId);
+      tabState.maybeUpdatePageAction();
+    }
+  } else {
+    await maybePromptUser(tabId, url);
   }
 }
 
@@ -573,14 +615,69 @@ async function onNavigationCompleted(navDetails) {
     return;
   }
 
-  // When the page has loaded, maybe prompt the user.
-  if (await shouldPromptUser(navDetails)) {
-    gCurrentlyPromptingTab = {id: tabId, url};
-    await updatePageActionIcon(tabId);
-    await browser.pageAction.show(tabId);
-    popupPageAction(tabId);
-    Config.onUserPrompted(new URL(url).host);
+  await maybePromptUser(tabId, url);
+}
+
+async function maybePromptUser(tabId, url) {
+  if (await shouldPromptUser(tabId, url)) {
+    await waitForGoodTimeToPrompt(tabId, url);
+    await promptUser(tabId, url);
   }
+}
+
+function waitForGoodTimeToPrompt(tabId, url) {
+  // Wait until the user has spent at least a certain number of total seconds
+  // on the given domain, then for a few more seconds after the page has loaded,
+  // and a requestIdleCallback on top of that for good measure.
+  return new Promise((resolve, reject) => {
+    // We do this with a content script, which has to let us know when the
+    // timeouts/idle callback has fired, so set up the listeners here.
+    const onMessage = message => {
+      if (message === "ready") {
+        browser.runtime.onMessage.removeListener(onMessage);
+        VisitTimeTracker.onUpdate.removeListener(onCancel);
+        resolve();
+      }
+    };
+    // If the user moves away from the tab/url, then we might as well cancel
+    // the timeout and/or idle callback, as all the content script will do
+    // is fail to send a message and log an error to the browser console.
+    const onCancel = () => {
+      browser.tabs.executeScript(tabId, {
+        runAt: "document_start",
+        code: `
+          try { cancelIdleCallback(window.promptIdle); } catch (_) { }
+          try { clearTimeout(window.promptTimeout); } catch (_) { }
+        `
+      });
+      browser.runtime.onMessage.removeListener(onMessage);
+      VisitTimeTracker.onUpdate.removeListener(onCancel);
+      reject();
+    };
+    browser.runtime.onMessage.addListener(onMessage);
+    VisitTimeTracker.onUpdate.addListener(onCancel);
+
+    const delay = Config.getDelayBeforePromptingForDomain(url);
+    browser.tabs.executeScript(tabId, {
+      runAt: "document_idle",
+      code: `
+        window.promptTimeout = setTimeout(() => {
+          window.promptIdle = requestIdleCallback(() => {
+            browser.runtime.sendMessage("ready");
+          });
+        }, ${delay});
+      `
+    });
+  });
+}
+
+async function promptUser(tabId, url) {
+  url = url || await browser.tab.get(tabId).url;
+  gCurrentlyPromptingTab = {id: tabId, url};
+  await updatePageActionIcon(tabId);
+  await browser.pageAction.show(tabId);
+  popupPageAction(tabId);
+  Config.onUserPrompted(url);
 }
 
 async function onMessageFromPageAction(message) {
@@ -640,12 +737,14 @@ async function onMessageFromPageAction(message) {
 }
 
 function activate() {
+  VisitTimeTracker.start();
   browser.tabs.onActivated.addListener(onTabChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
 }
 
 function deactivate() {
+  VisitTimeTracker.stop();
   hidePageActionOnEveryTab();
   gCurrentlyPromptingTab = undefined;
   browser.tabs.onActivated.removeListener(onTabChanged);
