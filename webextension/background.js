@@ -170,11 +170,11 @@ const Config = (function() {
       }
 
       this._shieldActivatedPromise = new Promise((resolve, reject) => {
-        const endListener = studyInfo => {
+        const endListener = studyInfoOrError => {
           browser.study.onReady.removeListener(readyListener);
           browser.study.onEndStudy.removeListener(endListener);
           this._shieldActivatedPromise = undefined;
-          reject(studyInfo);
+          reject(studyInfoOrError);
         };
         const readyListener = studyInfo => {
           browser.study.onReady.removeListener(readyListener);
@@ -187,8 +187,7 @@ const Config = (function() {
         try {
           browser.study.setup(this.shieldStudySetup).catch(reject);
         } catch (err) {
-          endListener();
-          reject(err);
+          endListener(err);
         }
       });
       return this._shieldActivatedPromise;
