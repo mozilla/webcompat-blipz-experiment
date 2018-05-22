@@ -35,6 +35,14 @@
         "script": "forceOpenPageActionPopup.js",
         "paths": [["experiments", "pageAction"]]
       }
+    },
+    "study": {
+      "schema": "shieldStudies.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "shieldStudies.js",
+        "paths": [["study"]]
+      }
     }
   },
   "icons": {

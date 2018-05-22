@@ -17,6 +17,7 @@ const Config = (function() {
 
   class Config {
     constructor() {
+      this._loaded = false;
       this._testingMode = true;
       this._neverShowAgain = false;
       this._skipPrivateBrowsingTabs = true;
@@ -56,6 +57,17 @@ const Config = (function() {
         this._onAboutConfigPrefChanged.bind(this), "variation");
 
       VisitTimeTracker.onUpdate.addListener(this._onVisitTimeUpdate.bind(this));
+
+      browser.study.onDataPermissionsChange.addListener(this._onShieldPermissionsChanged.bind(this));
+    }
+
+    _onShieldPermissionsChanged(perms) {
+      this._shieldEnabled = !!perms.shield;
+      this._telemetryEnabled = !!perms.telemetry;
+
+      if (this.loaded) {
+        maybeActivateOrDeactivate();
+      }
     }
 
     _onVisitTimeUpdate(details) {
@@ -87,13 +99,10 @@ const Config = (function() {
     }
 
     _onEnabledPrefChanged(value) {
-      if (value !== undefined) {
-        this._neverShowAgain = !value;
-        if (value) {
-          activate();
-        } else {
-          deactivate();
-        }
+      this._neverShowAgain = !value;
+
+      if (this.loaded) {
+        maybeActivateOrDeactivate();
       }
     }
 
@@ -129,8 +138,90 @@ const Config = (function() {
       }
     }
 
-    load() {
-      return Promise.all([
+    maybeSendTelemetry(message) {
+      if (!this._telemetryEnabled) {
+        return false;
+      }
+
+      browser.study.sendTelemetry(message);
+      return true;
+    }
+
+    get shieldStudySetup() {
+      const pref = `extensions.${browser.runtime.id.split("@")[0]}.variation`;
+      return {
+        activeExperimentName: browser.runtime.id,
+        allowEnroll: true,
+        studyType: "shield",
+        telemetry: {
+          send: true,
+          removeTestingFlag: !this._testingMode,
+        },
+        endings: {
+          "user-disable": {
+            baseUrl: null,
+          },
+          expired: {
+            baseUrl: null,
+          },
+          dataPermissionsRevoked: {
+            baseUrl: null,
+            study_state: "ended-neutral",
+          },
+        },
+        logLevel: 10,
+        variationOverridePreference: pref,
+        weightedVariations: UIVariants.map(name => {
+          return {name, weight: 1};
+        }),
+        expire: {
+          days: 60,
+        },
+      };
+    }
+
+    _activateShield() {
+      if (this._shieldActivatedPromise) {
+        return this._shieldActivatedPromise;
+      }
+
+      this._shieldActivatedPromise = new Promise((resolve, reject) => {
+        const endListener = studyInfo => {
+          browser.study.onReady.removeListener(readyListener);
+          browser.study.onEndStudy.removeListener(endListener);
+          this._shieldActivatedPromise = undefined;
+        };
+        const readyListener = studyInfo => {
+          browser.study.onReady.removeListener(readyListener);
+          resolve(studyInfo);
+        };
+        browser.study.onReady.addListener(readyListener);
+        browser.study.onEndStudy.addListener(endListener);
+        try {
+          browser.study.setup(this.shieldStudySetup).catch(reject);
+        } catch (err) {
+          endListener();
+          reject(err);
+        }
+      });
+      return this._shieldActivatedPromise;
+    }
+
+    async load() {
+      if (this._loadPromise) {
+        return this._loadPromise;
+      }
+
+      const perms = await browser.study.getDataPermissions();
+      if (!perms.shield) {
+        this._loadPromise = Promise.reject();
+        return this._loadPromise;
+      }
+
+      this._onShieldPermissionsChanged(perms);
+
+      this._loadPromise = Promise.all([
+        this._activateShield(),
         browser.experiments.browserInfo.getAppVersion(),
         browser.experiments.browserInfo.getBuildID(),
         browser.experiments.browserInfo.getPlatform(),
@@ -139,7 +230,7 @@ const Config = (function() {
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint"),
         browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
-      ]).then(([appVersion, buildID, platform, releaseChannel,
+      ]).then(([studyInfo, appVersion, buildID, platform, releaseChannel,
                 enabledPref, landingPref, variationPref, otherPrefs]) => {
         this._appVersion = appVersion;
         this._buildID = buildID;
@@ -162,6 +253,8 @@ const Config = (function() {
           this._reportLanding = "https://blipz-experiment-issues.herokuapp.com/new";
           browser.experiments.aboutConfigPrefs.setString("reportEndpoint", this._reportLanding);
         }
+
+        this._uiVariant = studyInfo.variation.name;
 
         // Testers may use an about:config flag to toggle the UI variant.
         // They may also use an invalid value to reset our config.
@@ -202,7 +295,10 @@ const Config = (function() {
         if (!this._uiVariant) {
           this._selectRandomUIVariant();
         }
+
+        this._loaded = true;
       });
+      return this._loadPromise;
     }
 
     save(options) {
@@ -294,6 +390,14 @@ const Config = (function() {
       return timeout;
     }
 
+    get loaded() {
+      return this._loaded;
+    }
+
+    get shieldEnabled() {
+      return this._shieldEnabled;
+    }
+
     get testingMode() {
       return this._testingMode;
     }
@@ -374,16 +478,6 @@ function yesOrNo(bool) {
   return bool ? "yes" : "no";
 }
 
-function pingTelemetry(message) {
-  if (Config.testingMode) {
-    console.info("Pinging telemetry: ", message);
-    return false;
-  }
-
-  // TBD
-  return true;
-}
-
 function backgroundSendReport(data) {
   data.type = browser.i18n.getMessage(`issueLabel${data.type}`);
 
@@ -429,7 +523,7 @@ function backgroundSendReport(data) {
         "NetworkError");
     }
   }).catch(error => {
-    pingTelemetry({reportSendError: error.message});
+    Config.maybeSendTelemetry({reportSendError: error.message});
   });
 }
 
@@ -823,25 +917,39 @@ async function onMessageFromPageAction(message) {
   return undefined;
 }
 
+let active = false;
+
 function activate() {
   VisitTimeTracker.start();
   browser.tabs.onActivated.addListener(onTabChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+  active = true;
 }
 
-function deactivate() {
+function deactivate(reason = "user-disable") {
   VisitTimeTracker.stop();
   hidePageActionOnEveryTab();
   gCurrentlyPromptingTab = undefined;
   browser.tabs.onActivated.removeListener(onTabChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
+  browser.study.endStudy(reason);
+  active = false;
 }
 
-Config.load().then(() => {
-  if (!Config.neverShowAgain) {
+function maybeActivateOrDeactivate() {
+  const shouldBeActive = Config.shieldEnabled && !Config.neverShowAgain;
+  if (!active && shouldBeActive) {
     activate();
+  } else if (active && !shouldBeActive) {
+    deactivate();
+  }
+}
+
+Config.load().then(maybeActivateOrDeactivate).catch(loadingError => {
+  if (Config.testingMode) {
+    console.info("Not starting addon", loadingError);
   }
 });
 
@@ -862,7 +970,7 @@ async function handleButtonClick(command, tabState) {
   switch (tabState.slide) {
     case "initialPrompt": {
       const siteWorks = command === "yes";
-      pingTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
+      Config.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
       if (siteWorks) {
         tabState.slide = "thankYou";
         tabState.markAsVerified();
