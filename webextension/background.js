@@ -57,17 +57,6 @@ const Config = (function() {
         this._onAboutConfigPrefChanged.bind(this), "variation");
 
       VisitTimeTracker.onUpdate.addListener(this._onVisitTimeUpdate.bind(this));
-
-      browser.study.onDataPermissionsChange.addListener(this._onShieldPermissionsChanged.bind(this));
-    }
-
-    _onShieldPermissionsChanged(perms) {
-      this._shieldEnabled = !!perms.shield;
-      this._telemetryEnabled = !!perms.telemetry;
-
-      if (this.loaded) {
-        maybeActivateOrDeactivate();
-      }
     }
 
     _onVisitTimeUpdate(details) {
@@ -139,12 +128,7 @@ const Config = (function() {
     }
 
     maybeSendTelemetry(message) {
-      if (!this._telemetryEnabled) {
-        return false;
-      }
-
       browser.study.sendTelemetry(message);
-      return true;
     }
 
     get shieldStudySetup() {
@@ -169,7 +153,7 @@ const Config = (function() {
             study_state: "ended-neutral",
           },
         },
-        logLevel: 10,
+        logLevel: this._testingMode ? 30 : 0,
         variationOverridePreference: pref,
         weightedVariations: UIVariants.map(name => {
           return {name, weight: 1};
@@ -190,9 +174,12 @@ const Config = (function() {
           browser.study.onReady.removeListener(readyListener);
           browser.study.onEndStudy.removeListener(endListener);
           this._shieldActivatedPromise = undefined;
+          reject(studyInfo);
         };
         const readyListener = studyInfo => {
           browser.study.onReady.removeListener(readyListener);
+          browser.study.onEndStudy.removeListener(endListener);
+          this._shieldActivatedPromise = undefined;
           resolve(studyInfo);
         };
         browser.study.onReady.addListener(readyListener);
@@ -208,19 +195,7 @@ const Config = (function() {
     }
 
     async load() {
-      if (this._loadPromise) {
-        return this._loadPromise;
-      }
-
-      const perms = await browser.study.getDataPermissions();
-      if (!perms.shield) {
-        this._loadPromise = Promise.reject();
-        return this._loadPromise;
-      }
-
-      this._onShieldPermissionsChanged(perms);
-
-      this._loadPromise = Promise.all([
+      return Promise.all([
         this._activateShield(),
         browser.experiments.browserInfo.getAppVersion(),
         browser.experiments.browserInfo.getBuildID(),
@@ -298,7 +273,6 @@ const Config = (function() {
 
         this._loaded = true;
       });
-      return this._loadPromise;
     }
 
     save(options) {
@@ -392,10 +366,6 @@ const Config = (function() {
 
     get loaded() {
       return this._loaded;
-    }
-
-    get shieldEnabled() {
-      return this._shieldEnabled;
     }
 
     get testingMode() {
@@ -920,6 +890,9 @@ async function onMessageFromPageAction(message) {
 let active = false;
 
 function activate() {
+  if (active) {
+    return;
+  }
   VisitTimeTracker.start();
   browser.tabs.onActivated.addListener(onTabChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
@@ -928,6 +901,10 @@ function activate() {
 }
 
 function deactivate(reason = "user-disable") {
+  if (!active) {
+    return;
+  }
+  active = false;
   VisitTimeTracker.stop();
   hidePageActionOnEveryTab();
   gCurrentlyPromptingTab = undefined;
@@ -935,11 +912,10 @@ function deactivate(reason = "user-disable") {
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
   browser.study.endStudy(reason);
-  active = false;
 }
 
 function maybeActivateOrDeactivate() {
-  const shouldBeActive = Config.shieldEnabled && !Config.neverShowAgain;
+  const shouldBeActive = !Config.neverShowAgain;
   if (!active && shouldBeActive) {
     activate();
   } else if (active && !shouldBeActive) {
@@ -947,7 +923,12 @@ function maybeActivateOrDeactivate() {
   }
 }
 
-Config.load().then(maybeActivateOrDeactivate).catch(loadingError => {
+Config.load().then(() => {
+  browser.study.onEndStudy.addListener(() => {
+    deactivate();
+  });
+  maybeActivateOrDeactivate();
+}).catch(loadingError => {
   if (Config.testingMode) {
     console.info("Not starting addon", loadingError);
   }
