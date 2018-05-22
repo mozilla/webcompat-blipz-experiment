@@ -897,6 +897,7 @@ function activate() {
   browser.tabs.onActivated.addListener(onTabChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+  browser.study.onEndStudy.addListener(deactivate);
   active = true;
 }
 
@@ -911,28 +912,24 @@ function deactivate(reason = "user-disable") {
   browser.tabs.onActivated.removeListener(onTabChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
+  browser.study.onEndStudy.removeListener(deactivate);
   browser.study.endStudy(reason);
 }
 
-function maybeActivateOrDeactivate() {
+function maybeActivateOrDeactivate(forceActivate = false) {
   const shouldBeActive = !Config.neverShowAgain;
   if (!active && shouldBeActive) {
-    activate();
+    Config.load().then(activate).catch(loadingError => {
+      if (Config.testingMode) {
+        console.info("Not starting addon", loadingError);
+      }
+    });
   } else if (active && !shouldBeActive) {
     deactivate();
   }
 }
 
-Config.load().then(() => {
-  browser.study.onEndStudy.addListener(() => {
-    deactivate();
-  });
-  maybeActivateOrDeactivate();
-}).catch(loadingError => {
-  if (Config.testingMode) {
-    console.info("Not starting addon", loadingError);
-  }
-});
+maybeActivateOrDeactivate(true);
 
 function hidePageActionOnEveryTab() {
   browser.tabs.query({}).then(tabs => {
