@@ -17,6 +17,7 @@ const Config = (function() {
 
   class Config {
     constructor() {
+      this._loaded = false;
       this._testingMode = true;
       this._neverShowAgain = false;
       this._skipPrivateBrowsingTabs = true;
@@ -87,13 +88,10 @@ const Config = (function() {
     }
 
     _onEnabledPrefChanged(value) {
-      if (value !== undefined) {
-        this._neverShowAgain = !value;
-        if (value) {
-          activate();
-        } else {
-          deactivate();
-        }
+      this._neverShowAgain = !value;
+
+      if (this.loaded) {
+        maybeActivateOrDeactivate();
       }
     }
 
@@ -129,8 +127,75 @@ const Config = (function() {
       }
     }
 
-    load() {
+    maybeSendTelemetry(message) {
+      browser.study.sendTelemetry(message);
+    }
+
+    get shieldStudySetup() {
+      const pref = `extensions.${browser.runtime.id.split("@")[0]}.variation`;
+      return {
+        activeExperimentName: browser.runtime.id,
+        allowEnroll: true,
+        studyType: "shield",
+        telemetry: {
+          send: true,
+          removeTestingFlag: !this._testingMode,
+        },
+        endings: {
+          "user-disable": {
+            baseUrl: null,
+          },
+          expired: {
+            baseUrl: null,
+          },
+          dataPermissionsRevoked: {
+            baseUrl: null,
+            study_state: "ended-neutral",
+          },
+        },
+        logLevel: this._testingMode ? 30 : 0,
+        variationOverridePreference: pref,
+        weightedVariations: UIVariants.map(name => {
+          return {name, weight: 1};
+        }),
+        expire: {
+          days: 14,
+        },
+      };
+    }
+
+    _activateShield() {
+      if (this._shieldActivatedPromise) {
+        return this._shieldActivatedPromise;
+      }
+
+      this._shieldActivatedPromise = new Promise((resolve, reject) => {
+        const endListener = studyInfoOrError => {
+          browser.study.onReady.removeListener(readyListener);
+          browser.study.onEndStudy.removeListener(endListener);
+          this._shieldActivatedPromise = undefined;
+          reject(studyInfoOrError);
+        };
+        const readyListener = studyInfo => {
+          browser.study.onReady.removeListener(readyListener);
+          browser.study.onEndStudy.removeListener(endListener);
+          this._shieldActivatedPromise = undefined;
+          resolve(studyInfo);
+        };
+        browser.study.onReady.addListener(readyListener);
+        browser.study.onEndStudy.addListener(endListener);
+        try {
+          browser.study.setup(this.shieldStudySetup).catch(reject);
+        } catch (err) {
+          endListener(err);
+        }
+      });
+      return this._shieldActivatedPromise;
+    }
+
+    async load() {
       return Promise.all([
+        this._activateShield(),
         browser.experiments.browserInfo.getAppVersion(),
         browser.experiments.browserInfo.getBuildID(),
         browser.experiments.browserInfo.getPlatform(),
@@ -139,7 +204,7 @@ const Config = (function() {
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint"),
         browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
-      ]).then(([appVersion, buildID, platform, releaseChannel,
+      ]).then(([studyInfo, appVersion, buildID, platform, releaseChannel,
                 enabledPref, landingPref, variationPref, otherPrefs]) => {
         this._appVersion = appVersion;
         this._buildID = buildID;
@@ -162,6 +227,8 @@ const Config = (function() {
           this._reportLanding = "https://blipz-experiment-issues.herokuapp.com/new";
           browser.experiments.aboutConfigPrefs.setString("reportEndpoint", this._reportLanding);
         }
+
+        this._uiVariant = studyInfo.variation.name;
 
         // Testers may use an about:config flag to toggle the UI variant.
         // They may also use an invalid value to reset our config.
@@ -202,6 +269,8 @@ const Config = (function() {
         if (!this._uiVariant) {
           this._selectRandomUIVariant();
         }
+
+        this._loaded = true;
       });
     }
 
@@ -294,6 +363,10 @@ const Config = (function() {
       return timeout;
     }
 
+    get loaded() {
+      return this._loaded;
+    }
+
     get testingMode() {
       return this._testingMode;
     }
@@ -374,16 +447,6 @@ function yesOrNo(bool) {
   return bool ? "yes" : "no";
 }
 
-function pingTelemetry(message) {
-  if (Config.testingMode) {
-    console.info("Pinging telemetry: ", message);
-    return false;
-  }
-
-  // TBD
-  return true;
-}
-
 function backgroundSendReport(data) {
   data.type = browser.i18n.getMessage(`issueLabel${data.type}`);
 
@@ -429,7 +492,7 @@ function backgroundSendReport(data) {
         "NetworkError");
     }
   }).catch(error => {
-    pingTelemetry({reportSendError: error.message});
+    Config.maybeSendTelemetry({reportSendError: error.message});
   });
 }
 
@@ -823,27 +886,49 @@ async function onMessageFromPageAction(message) {
   return undefined;
 }
 
+let active = false;
+
 function activate() {
+  if (active) {
+    return;
+  }
   VisitTimeTracker.start();
   browser.tabs.onActivated.addListener(onTabChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
+  browser.study.onEndStudy.addListener(deactivate);
+  active = true;
 }
 
-function deactivate() {
+function deactivate(reason = "user-disable") {
+  if (!active) {
+    return;
+  }
+  active = false;
   VisitTimeTracker.stop();
   hidePageActionOnEveryTab();
   gCurrentlyPromptingTab = undefined;
   browser.tabs.onActivated.removeListener(onTabChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
+  browser.study.onEndStudy.removeListener(deactivate);
+  browser.study.endStudy(reason);
 }
 
-Config.load().then(() => {
-  if (!Config.neverShowAgain) {
-    activate();
+function maybeActivateOrDeactivate(forceActivate = false) {
+  const shouldBeActive = !Config.neverShowAgain;
+  if (!active && shouldBeActive) {
+    Config.load().then(activate).catch(loadingError => {
+      if (Config.testingMode) {
+        console.info("Not starting addon", loadingError);
+      }
+    });
+  } else if (active && !shouldBeActive) {
+    deactivate();
   }
-});
+}
+
+maybeActivateOrDeactivate(true);
 
 function hidePageActionOnEveryTab() {
   browser.tabs.query({}).then(tabs => {
@@ -862,7 +947,7 @@ async function handleButtonClick(command, tabState) {
   switch (tabState.slide) {
     case "initialPrompt": {
       const siteWorks = command === "yes";
-      pingTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
+      Config.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
       if (siteWorks) {
         tabState.slide = "thankYou";
         tabState.markAsVerified();
