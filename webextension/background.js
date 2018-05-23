@@ -159,7 +159,7 @@ const Config = (function() {
           return {name, weight: 1};
         }),
         expire: {
-          days: 60,
+          days: 14,
         },
       };
     }
