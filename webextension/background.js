@@ -10,7 +10,7 @@ let gCurrentlyPromptingTab;
 
 const Config = (function() {
   browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall([
-    "enabled", "reportEndpoint", "variation"
+    "reportEndpoint", "variation"
   ]);
 
   const UIVariants = ["more-context", "little-context", "no-context"];
@@ -19,7 +19,6 @@ const Config = (function() {
     constructor() {
       this._loaded = false;
       this._testingMode = true;
-      this._neverShowAgain = false;
       this._skipPrivateBrowsingTabs = true;
       this._lastPromptTime = 0;
       this._domainsToCheck = {
@@ -51,9 +50,6 @@ const Config = (function() {
       };
 
       browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
-        this._onAboutConfigPrefChanged.bind(this), "enabled");
-
-      browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
         this._onAboutConfigPrefChanged.bind(this), "variation");
 
       VisitTimeTracker.onUpdate.addListener(this._onVisitTimeUpdate.bind(this));
@@ -72,11 +68,7 @@ const Config = (function() {
     }
 
     _onAboutConfigPrefChanged(name) {
-      if (name === "enabled") {
-        browser.experiments.aboutConfigPrefs.getBool("enabled").then(value => {
-          this._onEnabledPrefChanged(value);
-        });
-      } else if (name === "variation") {
+      if (name === "variation") {
         browser.experiments.aboutConfigPrefs.getString("variation").then(value => {
           this._onVariationPrefChanged(value);
         });
@@ -84,14 +76,6 @@ const Config = (function() {
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint").then(value => {
           this._onLandingPrefChanged(value);
         });
-      }
-    }
-
-    _onEnabledPrefChanged(value) {
-      this._neverShowAgain = !value;
-
-      if (this.loaded) {
-        maybeActivateOrDeactivate();
       }
     }
 
@@ -196,24 +180,15 @@ const Config = (function() {
         browser.experiments.browserInfo.getBuildID(),
         browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
-        browser.experiments.aboutConfigPrefs.getBool("enabled"),
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint"),
         browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
       ]).then(([studyInfo, appVersion, buildID, platform, releaseChannel,
-                enabledPref, landingPref, variationPref, otherPrefs]) => {
+                landingPref, variationPref, otherPrefs]) => {
         this._appVersion = appVersion;
         this._buildID = buildID;
         this._platform = platform;
         this._releaseChannel = releaseChannel;
-
-        // The "never show again" option is stored in about:config
-        // so users can reset it. The rest are stored in the web
-        // extension local store, as users would not benefit
-        // from them being in about:config anyway.
-        if (enabledPref !== undefined) {
-          this._neverShowAgain = !enabledPref;
-        }
 
         // Store the report landing URL in an about:config preference
         // so that mochitests can more easily override the value.
@@ -272,11 +247,6 @@ const Config = (function() {
 
     save(options) {
       const promises = [];
-      if ("neverShowAgain" in options) {
-        promises.push(browser.experiments.aboutConfigPrefs.setBool(
-                        "enabled", !options.neverShowAgain));
-        delete options.neverShowAgain;
-      }
       if (Object.keys(options).length) {
         promises.push(browser.storage.local.set(options));
       }
@@ -345,7 +315,7 @@ const Config = (function() {
     }
 
     getDelayBeforePromptingForDomain(url) {
-      const minMillisecondsUserTimeOnDomainBeforePrompt = 65000;
+      const minMillisecondsUserTimeOnDomainBeforePrompt = 0;
       const maxMillisecondsExtraRandomDelay = 5000;
 
       const min = Math.max(0, minMillisecondsUserTimeOnDomainBeforePrompt -
@@ -377,15 +347,6 @@ const Config = (function() {
 
     get lastPromptTime() {
       return this._lastPromptTime;
-    }
-
-    get neverShowAgain() {
-      return this._neverShowAgain;
-    }
-
-    set neverShowAgain(bool) {
-      this._neverShowAgain = bool;
-      this.save({neverShowAgain: bool});
     }
 
     get skipPrivateBrowsingTabs() {
@@ -429,8 +390,7 @@ const Config = (function() {
 async function shouldPromptUser(tabId, url) {
   try {
     url = new URL(url);
-    return !Config.neverShowAgain &&
-           Config.isPromptableURL(url) &&
+    return Config.isPromptableURL(url) &&
            Config.shouldPromptUserNow(url.host) &&
            (!Config.skipPrivateBrowsingTabs ||
             !(await browser.tabs.get(tabId)).incognito);
@@ -454,14 +414,9 @@ const portToPageAction = (function() {
       // When the page action popup is hidden.
       port = undefined;
 
-      // Update the page action icon for whichever tab we're on now,
-      // or deactivate ourselves if the user clicked "never show again".
+      // Update the page action icon for whichever tab we're on now.
       TabState.get().then(tabState => {
-        if (Config.neverShowAgain) {
-          deactivate();
-        } else {
-          updatePageActionIcon(tabState.tabId);
-        }
+        updatePageActionIcon(tabState.tabId);
       });
     });
 
@@ -682,7 +637,7 @@ const TabState = (function() {
     }
 
     maybeSendTelemetry(message) {
-      browser.study.sendTelemetry(Object.assign({blipz_session_id: this._blipz_session_id}, message));
+      return browser.study.sendTelemetry(Object.assign({blipz_session_id: this._blipz_session_id}, message));
     }
 
     async submitReport() {
@@ -738,7 +693,7 @@ async function onTabChanged(info) {
   const { tabId } = info;
   const { url } = await browser.tabs.get(tabId);
 
-  if (Config.neverShowAgain || !Config.isPromptableURL(url)) {
+  if (!Config.isPromptableURL(url)) {
     browser.pageAction.hide(tabId);
     return;
   }
@@ -784,7 +739,7 @@ async function onNavigationCommitted(navDetails) {
   }
 
   // Show the page action icon if it's been shown before.
-  if (!Config.neverShowAgain && Config.lastPromptTime &&
+  if (Config.lastPromptTime &&
       Config.isPromptableURL(url)) {
     updatePageActionIcon(tabId);
     await browser.pageAction.show(tabId);
@@ -871,13 +826,11 @@ async function onMessageFromPageAction(message) {
   const tabState = await TabState.get(tabId);
 
   if ("neverShowAgain" in message) {
-    const neverShowAgain = message.neverShowAgain;
-    Config.neverShowAgain = neverShowAgain;
-    if (neverShowAgain) {
-      tabState.maybeSendTelemetry({clickedDontShowAgain: "yes"});
-      return undefined;
-    }
-    delete message.neverShowAgain;
+    const after = () => {
+      browser.study.endStudy("user-disable").then(deactivate).catch(deactivate);
+    };
+    tabState.maybeSendTelemetry({clickedDontShowAgain: "yes"}).catch(after).then(after);
+    return undefined;
   }
 
   delete message.tabId;
@@ -948,7 +901,7 @@ function activate() {
   active = true;
 }
 
-function deactivate(reason = "user-disable") {
+function deactivate() {
   if (!active) {
     return;
   }
@@ -959,24 +912,15 @@ function deactivate(reason = "user-disable") {
   browser.tabs.onActivated.removeListener(onTabChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
-  browser.study.onEndStudy.removeListener(deactivate);
-  browser.study.endStudy(reason);
+  browser.management.uninstallSelf();
 }
 
-function maybeActivateOrDeactivate(forceActivate = false) {
-  const shouldBeActive = !Config.neverShowAgain;
-  if (!active && shouldBeActive) {
-    Config.load().then(activate).catch(loadingError => {
-      if (Config.testingMode) {
-        console.info("Not starting addon", loadingError);
-      }
-    });
-  } else if (active && !shouldBeActive) {
-    deactivate();
+Config.load().then(activate).catch(loadingError => {
+  if (Config.testingMode) {
+    console.info("Failed to start addon; uninstalling:", loadingError);
   }
-}
-
-maybeActivateOrDeactivate(true);
+  browser.management.uninstallSelf();
+});
 
 function hidePageActionOnEveryTab() {
   browser.tabs.query({}).then(tabs => {
@@ -987,11 +931,6 @@ function hidePageActionOnEveryTab() {
 }
 
 async function handleButtonClick(command, tabState) {
-  if (Config.neverShowAgain) {
-    browser.pageAction.hide(tabState.tabId);
-    return;
-  }
-
   switch (tabState.slide) {
     case "initialPrompt": {
       const siteWorks = command === "yes";
