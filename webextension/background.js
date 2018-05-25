@@ -123,14 +123,10 @@ const Config = (function() {
         },
         endings: {
           "user-disable": {
-            baseUrl: null,
+            baseUrls: ["https://www.surveygizmo.com/s3/4388018/Blipz-shield-survey"],
           },
           expired: {
-            baseUrl: null,
-          },
-          dataPermissionsRevoked: {
-            baseUrl: null,
-            study_state: "ended-neutral",
+            baseUrls: ["https://www.surveygizmo.com/s3/4388018/Blipz-shield-survey"],
           },
         },
         logLevel: this._testingMode ? 30 : 0,
