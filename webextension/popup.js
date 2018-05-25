@@ -32,6 +32,7 @@ const portToBGScript = (function() {
 
   async function send(message) {
     if (port) {
+      message.tabId = gState.tabId;
       return port.postMessage(message);
     }
     console.trace();
@@ -173,6 +174,11 @@ function showScreenshot(dataUrl) {
 function handleClick(e) {
   if (e.which !== 1) {
     return;
+  }
+
+  const exit = e.target.getAttribute("data-exit");
+  if (exit) {
+    portToBGScript.send({command: "leavingPageAction", exit});
   }
 
   if (e.target.matches(".screenshot > button")) {

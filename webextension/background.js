@@ -127,10 +127,6 @@ const Config = (function() {
       }
     }
 
-    maybeSendTelemetry(message) {
-      browser.study.sendTelemetry(message);
-    }
-
     get shieldStudySetup() {
       const pref = `extensions.${browser.runtime.id.split("@")[0]}.variation`;
       return {
@@ -447,81 +443,30 @@ function yesOrNo(bool) {
   return bool ? "yes" : "no";
 }
 
-function backgroundSendReport(data) {
-  data.type = browser.i18n.getMessage(`issueLabel${data.type}`);
-
-  const body = ["url", "type", "appVersion", "channel", "platform", "buildID",
-                "experimentBranch", "description"].map(function(name) {
-      const label = browser.i18n.getMessage(`detailLabel_${name}`);
-      const value = data[name] || "";
-      return `**${label}** ${value}`;
-    }).join("\n");
-
-  const domain = Config.findDomainMatch(new URL(data.url).host);
-
-  const report = {
-    title: `${domain} - ${data.type}`,
-    body,
-    labels: [`variant-${data.experimentBranch}`],
-  };
-
-  if (data.userPrompted) {
-    report.labels.push("user-prompted");
-  }
-
-  if (data.screenshot) {
-    report.screenshot = data.screenshot;
-  }
-
-  if (Config.testingMode) {
-    console.info("Would submit this report: ", report);
-    return Promise.resolve();
-  }
-
-  const fd = new FormData();
-  for (const [key, value] of Object.entries(report)) {
-    fd.append(key, value);
-  }
-  return fetch(Config.reportLanding, {
-    body: fd,
-    method: "POST",
-  }).then(async response => {
-    if (!response.ok) {
-      throw new DOMException(
-        `Got ${response.status} status from server: ${response.statusText}`,
-        "NetworkError");
-    }
-  }).catch(error => {
-    Config.maybeSendTelemetry({reportSendError: error.message});
-  });
-}
-
 const portToPageAction = (function() {
   let port;
 
   browser.runtime.onConnect.addListener(_port => {
+    // When the page action popup is shown.
     port = _port;
     port.onMessage.addListener(onMessageFromPageAction);
     port.onDisconnect.addListener(function() {
+      // When the page action popup is hidden.
       port = undefined;
+
+      // Update the page action icon for whichever tab we're on now,
+      // or deactivate ourselves if the user clicked "never show again".
       TabState.get().then(tabState => {
-        // When the popup is hidden.
-        updatePageActionIcon(tabState.tabId);
-        if (tabState.isShowingThankYouPage()) {
-          tabState.reset();
-          gCurrentlyPromptingTab = undefined;
-        }
         if (Config.neverShowAgain) {
           deactivate();
+        } else {
+          updatePageActionIcon(tabState.tabId);
         }
       });
     });
 
     TabState.get().then(tabState => {
-      const tabId = tabState.tabId;
-      gCurrentlyPromptingTab = {id: tabId, url: tabState.url};
-      updatePageActionIcon(tabId);
-      tabState.maybeUpdatePageAction();
+      tabState.onPageActionShown();
     });
   });
 
@@ -581,6 +526,8 @@ const TabState = (function() {
 
     reset() {
       this._slide = "initialPrompt";
+      this._blipz_session_id = Date.now().toString();
+      this.takenPageActionExit = undefined;
       this.updateReport();
     }
 
@@ -608,6 +555,10 @@ const TabState = (function() {
 
     get screenshot() {
       return this._report.screenshot;
+    }
+
+    get userPrompted() {
+      return this._report.userPrompted;
     }
 
     updateReport(updates) {
@@ -644,6 +595,7 @@ const TabState = (function() {
     }
 
     async markAsVerified() {
+      this.takenPageActionExit = "done";
       gCurrentlyPromptingTab = undefined;
       await updatePageActionIcon(this._tabId);
     }
@@ -652,15 +604,98 @@ const TabState = (function() {
       return ["thankYou", "thankYouFeedback"].includes(this._slide);
     }
 
+    onPageActionShown() {
+      // Send telemetry on whether the user was actively prompted or
+      // not the first time the popup is brought up, but also when
+      // they call up the popup themselves (but not if they're
+      // coming back after clicking an internal link/screenshot).
+      if (!this.takenPageActionExit) {
+        const selfPrompted = this.userPrompted ? "no" : "yes";
+        this.maybeSendTelemetry({selfPrompted});
+      }
+
+      // Clear which link/screenshot the user clicked on which closed
+      // the popup last time (unless we're done, at which point we don't
+      // care if the user dismisses the popup anymore).
+      if (this.takenPageActionExit !== "done") {
+        this.takenPageActionExit = undefined;
+      }
+
+      // Start a new session if opening on a tab already on a thank-you page.
+      if (this.isShowingThankYouPage()) {
+        this.reset();
+        gCurrentlyPromptingTab = undefined;
+      }
+
+      gCurrentlyPromptingTab = {id: this._tabId, url: this._url};
+      updatePageActionIcon(this._tabId);
+      this.maybeUpdatePageAction();
+    }
+
+    _backgroundSendReport(data) {
+      data.type = browser.i18n.getMessage(`issueLabel${data.type}`);
+
+      const body = ["url", "type", "appVersion", "channel", "platform", "buildID",
+                    "experimentBranch", "description"].map(function(name) {
+          const label = browser.i18n.getMessage(`detailLabel_${name}`);
+          const value = data[name] || "";
+          return `**${label}** ${value}`;
+        }).join("\n");
+
+      const domain = Config.findDomainMatch(new URL(data.url).host);
+
+      const report = {
+        title: `${domain} - ${data.type}`,
+        body,
+        labels: [`variant-${data.experimentBranch}`],
+      };
+
+      if (data.userPrompted) {
+        report.labels.push("user-prompted");
+      }
+
+      if (data.screenshot) {
+        report.screenshot = data.screenshot;
+      }
+
+      if (Config.testingMode) {
+        console.info("Would submit this report: ", report);
+        return Promise.resolve();
+      }
+
+      const fd = new FormData();
+      for (const [key, value] of Object.entries(report)) {
+        fd.append(key, value);
+      }
+      return fetch(Config.reportLanding, {
+        body: fd,
+        method: "POST",
+      }).then(async response => {
+        if (!response.ok) {
+          throw new DOMException(
+            `Got ${response.status} status from server: ${response.statusText}`,
+            "NetworkError");
+        }
+      }).catch(error => {
+        this.maybeSendTelemetry({reportSendError: error.message});
+      });
+    }
+
+    maybeSendTelemetry(message) {
+      browser.study.sendTelemetry(Object.assign({blipz_session_id: this._blipz_session_id}, message));
+    }
+
     async submitReport() {
       if (this._reportSubmitPromise) {
         return this._reportSubmitPromise;
       }
 
+      this.maybeSendTelemetry({shareFeedBack: "userSubmitted"});
+
       this._reportSubmitPromise = new Promise(async (resolve, reject) => {
         const report = this._report;
         this.updateReport();
-        return backgroundSendReport(report).then(() => {
+        return this._backgroundSendReport(report).then(() => {
           delete this._reportSubmitPromise;
           resolve();
         }).catch(error => {
@@ -831,26 +866,39 @@ async function promptUser(tabId, url) {
 }
 
 async function onMessageFromPageAction(message) {
-  const { tabId, command } = message;
+  const { tabId, command, exit } = message;
+
+  const tabState = await TabState.get(tabId);
 
   if ("neverShowAgain" in message) {
     const neverShowAgain = message.neverShowAgain;
     Config.neverShowAgain = neverShowAgain;
     if (neverShowAgain) {
+      tabState.maybeSendTelemetry({clickedDontShowAgain: "yes"});
       return undefined;
     }
     delete message.neverShowAgain;
   }
 
-  const tabState = await TabState.get(tabId);
-
   delete message.tabId;
   delete message.command;
+  delete message.exit;
   if (Object.keys(message).length) {
     tabState.updateReport(message);
   }
 
   switch (command) {
+    case "leavingPageAction": {
+      if (exit) {
+        tabState.takenPageActionExit = exit;
+        if (exit === "why") {
+          tabState.maybeSendTelemetry({clickedWhySeeingThis: "yes"});
+        } else if (exit === "learnMore") {
+          tabState.maybeSendTelemetry({clickedLearnMore: "yes"});
+        }
+      }
+      break;
+    }
     case "removeScreenshot": {
       tabState.updateReport({screenshot: undefined});
       tabState.maybeUpdatePageAction(["screenshot"]);
@@ -947,7 +995,7 @@ async function handleButtonClick(command, tabState) {
   switch (tabState.slide) {
     case "initialPrompt": {
       const siteWorks = command === "yes";
-      Config.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
+      tabState.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
       if (siteWorks) {
         tabState.slide = "thankYou";
         tabState.markAsVerified();
@@ -968,6 +1016,7 @@ async function handleButtonClick(command, tabState) {
       } else if (command === "cancel") {
         closePageAction();
         tabState.reset();
+        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
       }
       tabState.markAsVerified();
       break;
@@ -983,6 +1032,7 @@ async function handleButtonClick(command, tabState) {
         closePageAction();
         tabState.reset();
         tabState.markAsVerified();
+        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
       }
       break;
     }
