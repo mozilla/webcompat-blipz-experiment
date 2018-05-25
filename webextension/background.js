@@ -454,13 +454,6 @@ const portToPageAction = (function() {
       // When the page action popup is hidden.
       port = undefined;
 
-      // Inform whichever tab we were actually prompting on/for.
-      if (gCurrentlyPromptingTab) {
-        TabState.get(gCurrentlyPromptingTab.id).then(tabState => {
-          tabState.onPageActionHidden();
-        });
-      }
-
       // Update the page action icon for whichever tab we're on now,
       // or deactivate ourselves if the user clicked "never show again".
       TabState.get().then(tabState => {
@@ -637,16 +630,6 @@ const TabState = (function() {
       gCurrentlyPromptingTab = {id: this._tabId, url: this._url};
       updatePageActionIcon(this._tabId);
       this.maybeUpdatePageAction();
-    }
-
-    onPageActionHidden() {
-      // If the page action closes and it is not because the user has
-      // just clicked an internal link/screenshot (both of which will
-      // open a tab and close the page action), then we presume the
-      // user dismissed the popup themselves.
-      if (!this.takenPageActionExit) {
-        this.maybeSendTelemetry({userDismissed: "yes"});
-      }
     }
 
     _backgroundSendReport(data) {
