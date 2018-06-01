@@ -21,6 +21,7 @@ const Config = (function() {
       this._testingMode = true;
       this._skipPrivateBrowsingTabs = true;
       this._lastPromptTime = 0;
+      this._totalPrompts = 0;
       this._domainsToCheck = {
         "accounts.google.com": {},
         "amazon.com": {},
@@ -89,11 +90,13 @@ const Config = (function() {
       // state and pick a new UI variant (useful for testing).
       this._selectRandomUIVariant();
       this._lastPromptTime = 0;
+      this._totalPrompts = 0;
       for (const key of Object.keys(this._domainsToCheck)) {
         this._domainsToCheck[key] = {};
       }
       this.save({
         lastPromptTime: this._lastPromptTime,
+        totalPrompts: this._totalPrompts,
         domainsToCheck: this._domainsToCheck,
       });
       return false;
@@ -147,14 +150,14 @@ const Config = (function() {
 
       this._shieldActivatedPromise = new Promise((resolve, reject) => {
         const endListener = studyInfoOrError => {
-          browser.study.onReady.removeListener(readyListener);
           browser.study.onEndStudy.removeListener(endListener);
+          browser.study.onReady.removeListener(readyListener);
           this._shieldActivatedPromise = undefined;
           reject(studyInfoOrError);
         };
         const readyListener = studyInfo => {
-          browser.study.onReady.removeListener(readyListener);
           browser.study.onEndStudy.removeListener(endListener);
+          browser.study.onReady.removeListener(readyListener);
           this._shieldActivatedPromise = undefined;
           resolve(studyInfo);
         };
@@ -256,9 +259,11 @@ const Config = (function() {
       }
       const now = Date.now();
       this._lastPromptTime = now;
+      this._totalPrompts++;
       this._domainsToCheck[domain].lastPromptTime = now;
       this.save({
         lastPromptTime: now,
+        totalPrompts: this._totalPrompts,
         domainsToCheck: this._domainsToCheck,
       });
     }
@@ -284,21 +289,44 @@ const Config = (function() {
     }
 
     shouldPromptUserNow(domain) {
-      // Prompt at most once a day, at a minimum once every three days,
-      // for a maximum of five prompts per user and one prompt per domain.
-      if (this._lastPromptTime) {
-        const now = Date.now();
-        const oneDay = 1000 * 60 * 60 * 24;
-        const nextValidCheckTime = this._lastPromptTime + oneDay;
-        const nextNecessaryCheckTime = this._lastPromptTime - (oneDay * 3);
-        if (now < nextValidCheckTime &&
-            (now > nextNecessaryCheckTime || Math.random() > 0.5)) {
-          return false;
-        }
+      // Only prompt users at most five times.
+      if (this._totalPrompts > 4) {
+        return false;
       }
 
       const domainMatch = this.findDomainMatch(domain);
-      return domainMatch && !this._domainsToCheck[domainMatch].lastPromptTime;
+      // Only prompt for domains we're interested in.
+      if (!domainMatch) {
+        return false;
+      }
+
+      // Prompt users at most once per domain.
+      if (this._domainsToCheck[domainMatch].lastPromptTime) {
+        return false;
+      }
+
+      // If user has never been prompted, decide based on an
+      // even distribution.
+      if (!this._lastPromptTime) {
+        return Math.random() > 0.5;
+      }
+
+      // Only prompt users at most once a day.
+      const now = Date.now();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const nextValidCheckTime = this._lastPromptTime + oneDay;
+      if (now < nextValidCheckTime) {
+        return false;
+      }
+
+      // Make sure to prompt users at least every 3 days.
+      const nextNecessaryCheckTime = this._lastPromptTime + (oneDay * 3);
+      if (now > nextNecessaryCheckTime) {
+        return true;
+      }
+
+      // Between 1-3 days, use an even distribution to decide.
+      return Math.random() > 0.5;
     }
 
     cumulativeMillisecondsSpentOnDomain(url) {
@@ -311,7 +339,7 @@ const Config = (function() {
     }
 
     getDelayBeforePromptingForDomain(url) {
-      const minMillisecondsUserTimeOnDomainBeforePrompt = 0;
+      const minMillisecondsUserTimeOnDomainBeforePrompt = 65000;
       const maxMillisecondsExtraRandomDelay = 5000;
 
       const min = Math.max(0, minMillisecondsUserTimeOnDomainBeforePrompt -
@@ -425,7 +453,9 @@ const portToPageAction = (function() {
     if (port) {
       return port.postMessage(message);
     }
-    console.trace();
+    if (Config.testingMode) {
+      console.trace();
+    }
     return Promise.reject("Page action is disconnected");
   }
 

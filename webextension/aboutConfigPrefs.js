@@ -8,7 +8,6 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
-ChromeUtils.defineModuleGetter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 
 const EventManager = ExtensionCommon.EventManager;
 
@@ -49,9 +48,9 @@ this.aboutConfigPrefs = class extends ExtensionAPI {
               return;
             }
             if (!prefsToClearOnUninstall.size) {
-              AddonManager.addAddonListener({
-                onUninstalling: addon => {
-                  if (addon.id === context.extension.id) {
+              context.extension.callOnClose({
+                close: () => {
+                  if (context.extension.shutdownReason === "ADDON_UNINSTALL") {
                     for (const name of prefsToClearOnUninstall) {
                       this.clearPref(name);
                     }
