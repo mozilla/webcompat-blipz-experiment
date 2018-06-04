@@ -8,6 +8,8 @@
 
 let gCurrentlyPromptingTab;
 
+let gCancelCurrentPromptDelayCallback;
+
 const Config = (function() {
   browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall([
     "reportEndpoint", "variation"
@@ -715,10 +717,26 @@ const TabState = (function() {
   };
 }());
 
+async function onWindowChanged(windowId) {
+  // If no window is active now, cancel the current prompt.
+  if (windowId === -1) {
+    cancelCurrentPromptDelay();
+    return;
+  }
+
+  const tabs = await browser.tabs.query({windowId, active: true});
+  if (tabs[0]) {
+    handleTabChange(tabs[0].id, tabs[0].url);
+  }
+}
+
 async function onTabChanged(info) {
   const { tabId } = info;
   const { url } = await browser.tabs.get(tabId);
+  handleTabChange(tabId, url);
+}
 
+async function handleTabChange(tabId, url) {
   if (!Config.isPromptableURL(url)) {
     browser.pageAction.hide(tabId);
     return;
@@ -743,7 +761,9 @@ async function onTabChanged(info) {
       tabState.maybeUpdatePageAction();
     }
   } else {
-    await maybePromptUser(tabId, url);
+    try {
+      await maybePromptUser(tabId, url);
+    } catch (_) { }
   }
 }
 
@@ -799,8 +819,11 @@ function waitForGoodTimeToPrompt(tabId, url) {
     // timeouts/idle callback has fired, so set up the listeners here.
     const onMessage = message => {
       if (message === "ready") {
+        gCancelCurrentPromptDelayCallback = undefined;
         browser.runtime.onMessage.removeListener(onMessage);
         VisitTimeTracker.onUpdate.removeListener(onCancel);
+        browser.tabs.onActivated.removeListener(onCancel);
+        browser.windows.onFocusChanged.removeListener(onCancel);
         resolve();
       }
     };
@@ -815,12 +838,18 @@ function waitForGoodTimeToPrompt(tabId, url) {
           try { clearTimeout(window.promptTimeout); } catch (_) { }
         `
       });
+      gCancelCurrentPromptDelayCallback = undefined;
       browser.runtime.onMessage.removeListener(onMessage);
       VisitTimeTracker.onUpdate.removeListener(onCancel);
+      browser.tabs.onActivated.removeListener(onCancel);
+      browser.windows.onFocusChanged.removeListener(onCancel);
       reject();
     };
     browser.runtime.onMessage.addListener(onMessage);
     VisitTimeTracker.onUpdate.addListener(onCancel);
+    browser.tabs.onActivated.addListener(onCancel);
+    browser.windows.onFocusChanged.addListener(onCancel);
+    gCancelCurrentPromptDelayCallback = onCancel;
 
     const delay = Config.getDelayBeforePromptingForDomain(url);
     browser.tabs.executeScript(tabId, {
@@ -834,6 +863,13 @@ function waitForGoodTimeToPrompt(tabId, url) {
       `
     });
   });
+}
+
+function cancelCurrentPromptDelay() {
+  if (gCancelCurrentPromptDelayCallback) {
+    gCancelCurrentPromptDelayCallback();
+    gCancelCurrentPromptDelayCallback = undefined;
+  }
 }
 
 async function promptUser(tabId, url) {
@@ -921,6 +957,7 @@ function activate() {
   }
   VisitTimeTracker.start();
   browser.tabs.onActivated.addListener(onTabChanged);
+  browser.windows.onFocusChanged.addListener(onWindowChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
   browser.study.onEndStudy.addListener(deactivate);
@@ -932,10 +969,12 @@ function deactivate() {
     return;
   }
   active = false;
+  cancelCurrentPromptDelay();
   VisitTimeTracker.stop();
   hidePageActionOnEveryTab();
   gCurrentlyPromptingTab = undefined;
   browser.tabs.onActivated.removeListener(onTabChanged);
+  browser.windows.onFocusChanged.removeListener(onWindowChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
   browser.management.uninstallSelf();
