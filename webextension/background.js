@@ -8,6 +8,8 @@
 
 let gCurrentlyPromptingTab;
 
+let gCancelCurrentPromptDelayCallback;
+
 const Config = (function() {
   browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall([
     "reportEndpoint", "variation"
@@ -71,24 +73,47 @@ const Config = (function() {
     _onAboutConfigPrefChanged(name) {
       if (name === "variation") {
         browser.experiments.aboutConfigPrefs.getString("variation").then(value => {
-          this._onVariationPrefChanged(value);
+          if (value !== this._uiVariant) {
+            this._onVariationPrefChanged(value);
+          }
         });
       } else if (name === "reportEndpoint") {
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint").then(value => {
-          this._onLandingPrefChanged(value);
+          if (value !== this._reportLanding) {
+            this._onLandingPrefChanged(value);
+          }
         });
       }
     }
 
-    _onVariationPrefChanged(variationPref) {
-      if (UIVariants.includes(variationPref)) {
-        this.uiVariant = variationPref;
-        return true;
+    async _onVariationPrefChanged(variationPref) {
+      // Users may set to an invalid value to request the addon to reset its state.
+      const isResetRequest = variationPref !== undefined && !UIVariants.includes(variationPref);
+
+      // If the variation pref is actually present, we are in testing mode.
+      this._testingMode = variationPref !== undefined;
+
+      // Start a new shield study with the correct testingMode and requested variant (if any).
+      await browser.study.endStudy("testing").catch(() => Promise.resolve());
+      this._uiVariant = variationPref;
+      const studyInfo = await this._activateShield();
+
+      // Check if Shield chose a different variant for us (ie, if the pref was not set).
+      if (studyInfo.variation.name !== this._uiVariant) {
+        this._uiVariant = studyInfo.variation.name;
+        if (this._testingMode) {
+          browser.experiments.aboutConfigPrefs.setString("variation", this._uiVariant);
+        }
       }
 
-      // If an invalid value was used, just reset the addon's
-      // state and pick a new UI variant (useful for testing).
-      this._selectRandomUIVariant();
+      if (!isResetRequest) {
+        return;
+      }
+
+      cancelCurrentPromptDelay();
+
+      gCurrentlyPromptingTab = undefined;
+
       this._lastPromptTime = 0;
       this._totalPrompts = 0;
       for (const key of Object.keys(this._domainsToCheck)) {
@@ -99,23 +124,13 @@ const Config = (function() {
         totalPrompts: this._totalPrompts,
         domainsToCheck: this._domainsToCheck,
       });
-      return false;
     }
 
     _onLandingPrefChanged(landingPref) {
       this._reportLanding = landingPref;
     }
 
-    _selectRandomUIVariant() {
-      this.uiVariant = UIVariants[Math.floor(Math.random() * UIVariants.length)];
-
-      if (this._testingMode) {
-        browser.experiments.aboutConfigPrefs.setString("variation", this._uiVariant);
-      }
-    }
-
     get shieldStudySetup() {
-      const pref = `extensions.${browser.runtime.id.split("@")[0]}.variation`;
       return {
         activeExperimentName: browser.runtime.id,
         allowEnroll: true,
@@ -125,20 +140,30 @@ const Config = (function() {
           removeTestingFlag: !this._testingMode,
         },
         endings: {
+          // Standard endings
           "user-disable": {
             baseUrls: ["https://www.surveygizmo.com/s3/4388018/Blipz-shield-survey?reason=disabled"],
           },
           expired: {
             baseUrls: ["https://www.surveygizmo.com/s3/4388018/Blipz-shield-survey"],
           },
+          ineligible: {
+          },
+
+          // Study-specific endings
+          testing: {
+            category: "ended-neutral",
+          },
         },
         logLevel: this._testingMode ? 30 : 0,
-        variationOverridePreference: pref,
         weightedVariations: UIVariants.map(name => {
           return {name, weight: 1};
         }),
         expire: {
           days: 14,
+        },
+        testing: {
+          variationName: this._uiVariant,
         },
       };
     }
@@ -174,16 +199,19 @@ const Config = (function() {
 
     async load() {
       return Promise.all([
-        this._activateShield(),
         browser.experiments.browserInfo.getAppVersion(),
         browser.experiments.browserInfo.getBuildID(),
         browser.experiments.browserInfo.getPlatform(),
         browser.experiments.browserInfo.getUpdateChannel(),
+        browser.experiments.aboutConfigPrefs.getString("variation").then(async value => {
+          // This will init the Shield study and ensure that the variation is valid.
+          await this._onVariationPrefChanged(value);
+          return value;
+        }),
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint"),
-        browser.experiments.aboutConfigPrefs.getString("variation"),
         browser.storage.local.get(),
-      ]).then(([studyInfo, appVersion, buildID, platform, releaseChannel,
-                landingPref, variationPref, otherPrefs]) => {
+      ]).then(([appVersion, buildID, platform, releaseChannel,
+                variationPref, landingPref, otherPrefs]) => {
         this._appVersion = appVersion;
         this._buildID = buildID;
         this._platform = platform;
@@ -198,12 +226,10 @@ const Config = (function() {
           browser.experiments.aboutConfigPrefs.setString("reportEndpoint", this._reportLanding);
         }
 
-        this._uiVariant = studyInfo.variation.name;
-
-        // Testers may use an about:config flag to toggle the UI variant.
-        // They may also use an invalid value to reset our config.
-        if (this._testingMode && variationPref !== undefined) {
-          if (this._onVariationPrefChanged(variationPref)) {
+        // Testers may override the variation we are using with the pref.
+        // They may use an invalid value to request for the addon to reset its state.
+        if (variationPref !== undefined) {
+          if (UIVariants.includes(variationPref)) {
             delete otherPrefs.uiVariant;
           } else {
             otherPrefs = {};
@@ -233,11 +259,6 @@ const Config = (function() {
         // we will have written them out with a valid value to begin with.
         for (const [name, value] of Object.entries(otherPrefs)) {
           this[`_${name}`] = value;
-        }
-
-        // If a valid UI variant has not otherwise been chosen yet, select one now.
-        if (!this._uiVariant) {
-          this._selectRandomUIVariant();
         }
 
         this._loaded = true;
@@ -715,10 +736,26 @@ const TabState = (function() {
   };
 }());
 
+async function onWindowChanged(windowId) {
+  // If no window is active now, cancel the current prompt.
+  if (windowId === -1) {
+    cancelCurrentPromptDelay();
+    return;
+  }
+
+  const tabs = await browser.tabs.query({windowId, active: true});
+  if (tabs[0]) {
+    handleTabChange(tabs[0].id, tabs[0].url);
+  }
+}
+
 async function onTabChanged(info) {
   const { tabId } = info;
   const { url } = await browser.tabs.get(tabId);
+  handleTabChange(tabId, url);
+}
 
+async function handleTabChange(tabId, url) {
   if (!Config.isPromptableURL(url)) {
     browser.pageAction.hide(tabId);
     return;
@@ -743,7 +780,9 @@ async function onTabChanged(info) {
       tabState.maybeUpdatePageAction();
     }
   } else {
-    await maybePromptUser(tabId, url);
+    try {
+      await maybePromptUser(tabId, url);
+    } catch (_) { }
   }
 }
 
@@ -799,8 +838,11 @@ function waitForGoodTimeToPrompt(tabId, url) {
     // timeouts/idle callback has fired, so set up the listeners here.
     const onMessage = message => {
       if (message === "ready") {
+        gCancelCurrentPromptDelayCallback = undefined;
         browser.runtime.onMessage.removeListener(onMessage);
         VisitTimeTracker.onUpdate.removeListener(onCancel);
+        browser.tabs.onActivated.removeListener(onCancel);
+        browser.windows.onFocusChanged.removeListener(onCancel);
         resolve();
       }
     };
@@ -815,12 +857,18 @@ function waitForGoodTimeToPrompt(tabId, url) {
           try { clearTimeout(window.promptTimeout); } catch (_) { }
         `
       });
+      gCancelCurrentPromptDelayCallback = undefined;
       browser.runtime.onMessage.removeListener(onMessage);
       VisitTimeTracker.onUpdate.removeListener(onCancel);
+      browser.tabs.onActivated.removeListener(onCancel);
+      browser.windows.onFocusChanged.removeListener(onCancel);
       reject();
     };
     browser.runtime.onMessage.addListener(onMessage);
     VisitTimeTracker.onUpdate.addListener(onCancel);
+    browser.tabs.onActivated.addListener(onCancel);
+    browser.windows.onFocusChanged.addListener(onCancel);
+    gCancelCurrentPromptDelayCallback = onCancel;
 
     const delay = Config.getDelayBeforePromptingForDomain(url);
     browser.tabs.executeScript(tabId, {
@@ -834,6 +882,13 @@ function waitForGoodTimeToPrompt(tabId, url) {
       `
     });
   });
+}
+
+function cancelCurrentPromptDelay() {
+  if (gCancelCurrentPromptDelayCallback) {
+    gCancelCurrentPromptDelayCallback();
+    gCancelCurrentPromptDelayCallback = undefined;
+  }
 }
 
 async function promptUser(tabId, url) {
@@ -921,6 +976,7 @@ function activate() {
   }
   VisitTimeTracker.start();
   browser.tabs.onActivated.addListener(onTabChanged);
+  browser.windows.onFocusChanged.addListener(onWindowChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
   browser.study.onEndStudy.addListener(deactivate);
@@ -932,10 +988,12 @@ function deactivate() {
     return;
   }
   active = false;
+  cancelCurrentPromptDelay();
   VisitTimeTracker.stop();
   hidePageActionOnEveryTab();
   gCurrentlyPromptingTab = undefined;
   browser.tabs.onActivated.removeListener(onTabChanged);
+  browser.windows.onFocusChanged.removeListener(onWindowChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
   browser.management.uninstallSelf();
