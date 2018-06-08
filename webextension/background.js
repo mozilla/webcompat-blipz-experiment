@@ -715,6 +715,7 @@ const TabState = (function() {
     maybeSendTelemetry(message) {
       const finalMessage = Object.assign({
         blipz_session_id: this._blipz_session_id,
+        uiVariant: Config._uiVariant,
       }, message);
 
       if (Config.testingMode) {
