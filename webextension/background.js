@@ -673,7 +673,8 @@ const TabState = (function() {
           return `**${label}** ${value}`;
         }).join("\n");
 
-      const domain = Config.findDomainMatch(new URL(data.url).host);
+      const host = new URL(data.url).host;
+      const domain = Config.findDomainMatch(host) || host;
 
       const report = {
         title: `${domain} - ${data.type}`,
