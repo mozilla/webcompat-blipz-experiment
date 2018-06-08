@@ -50,16 +50,17 @@ document.addEventListener("DOMContentLoaded", () => {
       browser.i18n.getMessage(msgId);
   }
 
-  for (const [selector, msgId] of Object.entries({
-    "[name=type]": "placeholderIssueType",
-    "[name=description]": "placeholderDescription",
+  for (const [name, msgId] of Object.entries({
+    "type": "placeholderIssueType",
+    "description": "placeholderDescription",
   })) {
-    const input = document.querySelector(selector);
+    const input = document.querySelector(`[name=${name}]`);
     input.placeholder = browser.i18n.getMessage(msgId);
 
     input.addEventListener("change", e => {
       const message = {};
       message[input.name] = input.value;
+      gState[name] = input.value;
       portToBGScript.send(message);
     });
   }
