@@ -88,14 +88,16 @@ const Config = (function() {
 
     async _onVariationPrefChanged(variationPref) {
       // Users may set to an invalid value to request the addon to reset its state.
-      const isResetRequest = variationPref !== undefined && !UIVariants.includes(variationPref);
+      const isResetRequest = variationPref === undefined || !UIVariants.includes(variationPref);
 
       // If the variation pref is actually present, we are in testing mode.
       this._testingMode = variationPref !== undefined;
 
       // Start a new shield study with the correct testingMode and requested variant (if any).
-      await browser.study.endStudy("testing").catch(() => Promise.resolve());
-      this._uiVariant = variationPref;
+      try {
+        await browser.study.endStudy("testing");
+      } catch (_) {}
+      this._uiVariant = isResetRequest ? "" : variationPref;
       const studyInfo = await this._activateShield();
 
       // Check if Shield chose a different variant for us (ie, if the pref was not set).
@@ -108,6 +110,10 @@ const Config = (function() {
 
       if (!isResetRequest) {
         return;
+      }
+
+      if (this._testingMode) {
+        console.info("Resetting add-on state");
       }
 
       cancelCurrentPromptDelay();
@@ -136,7 +142,7 @@ const Config = (function() {
         allowEnroll: true,
         studyType: "shield",
         telemetry: {
-          send: true,
+          send: !this._testingMode,
           removeTestingFlag: !this._testingMode,
         },
         endings: {
@@ -155,7 +161,6 @@ const Config = (function() {
             category: "ended-neutral",
           },
         },
-        logLevel: this._testingMode ? 30 : 0,
         weightedVariations: UIVariants.map(name => {
           return {name, weight: 1};
         }),
@@ -186,10 +191,11 @@ const Config = (function() {
           this._shieldActivatedPromise = undefined;
           resolve(studyInfo);
         };
-        browser.study.onReady.addListener(readyListener);
         browser.study.onEndStudy.addListener(endListener);
+        browser.study.onReady.addListener(readyListener);
+        browser.studyDebug.reset();
         try {
-          browser.study.setup(this.shieldStudySetup).catch(reject);
+          browser.study.setup(this.shieldStudySetup).catch(endListener);
         } catch (err) {
           endListener(err);
         }
@@ -312,24 +318,37 @@ const Config = (function() {
     shouldPromptUserNow(domain) {
       // Only prompt users at most five times.
       if (this._totalPrompts > 4) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domain}: have prompted 5 times already`);
+        }
         return false;
       }
 
       const domainMatch = this.findDomainMatch(domain);
       // Only prompt for domains we're interested in.
       if (!domainMatch) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domain}: domain not part of study`);
+        }
         return false;
       }
 
       // Prompt users at most once per domain.
       if (this._domainsToCheck[domainMatch].lastPromptTime) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domainMatch}: already prompted user on this domain`);
+        }
         return false;
       }
 
       // If user has never been prompted, decide based on an
       // even distribution.
       if (!this._lastPromptTime) {
-        return Math.random() > 0.5;
+        const shouldPrompt = Math.random() > 0.5;
+        if (!shouldPrompt && this._testingMode) {
+          console.info(`Not prompting user on ${domainMatch}: random choice`);
+        }
+        return shouldPrompt;
       }
 
       // Only prompt users at most once a day.
@@ -337,17 +356,27 @@ const Config = (function() {
       const oneDay = 1000 * 60 * 60 * 24;
       const nextValidCheckTime = this._lastPromptTime + oneDay;
       if (now < nextValidCheckTime) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domainMatch}: have already prompted user today`);
+        }
         return false;
       }
 
       // Make sure to prompt users at least every 3 days.
       const nextNecessaryCheckTime = this._lastPromptTime + (oneDay * 3);
       if (now > nextNecessaryCheckTime) {
+        if (this._testingMode) {
+          console.info(`Should prompt user now on ${domainMatch}: more than 3 days since last prompt`);
+        }
         return true;
       }
 
       // Between 1-3 days, use an even distribution to decide.
-      return Math.random() > 0.5;
+      const shouldPrompt = Math.random() > 0.5;
+      if (!shouldPrompt && this._testingMode) {
+        console.info(`Not prompting user on ${domainMatch}: random choice`);
+      }
+      return shouldPrompt;
     }
 
     cumulativeMillisecondsSpentOnDomain(url) {
@@ -684,7 +713,16 @@ const TabState = (function() {
     }
 
     maybeSendTelemetry(message) {
-      return browser.study.sendTelemetry(Object.assign({blipz_session_id: this._blipz_session_id}, message));
+      const finalMessage = Object.assign({
+        blipz_session_id: this._blipz_session_id,
+        uiVariant: Config._uiVariant,
+      }, message);
+
+      if (Config.testingMode) {
+        console.info("Sending telemetry", finalMessage);
+      }
+
+      return browser.study.sendTelemetry(finalMessage);
     }
 
     async submitReport() {
@@ -756,6 +794,8 @@ async function onTabChanged(info) {
 }
 
 async function handleTabChange(tabId, url) {
+  cancelCurrentPromptDelay();
+
   if (!Config.isPromptableURL(url)) {
     browser.pageAction.hide(tabId);
     return;
@@ -799,6 +839,7 @@ async function onNavigationCommitted(navDetails) {
   if (gCurrentlyPromptingTab &&
       gCurrentlyPromptingTab.id === tabId &&
       gCurrentlyPromptingTab.url !== url) {
+    cancelCurrentPromptDelay();
     gCurrentlyPromptingTab = undefined;
     TabState.reset(tabId);
   }
@@ -862,6 +903,9 @@ function waitForGoodTimeToPrompt(tabId, url) {
       VisitTimeTracker.onUpdate.removeListener(onCancel);
       browser.tabs.onActivated.removeListener(onCancel);
       browser.windows.onFocusChanged.removeListener(onCancel);
+      if (Config.testingMode) {
+        console.info("Canceled automated prompt");
+      }
       reject();
     };
     browser.runtime.onMessage.addListener(onMessage);
@@ -892,7 +936,7 @@ function cancelCurrentPromptDelay() {
 }
 
 async function promptUser(tabId, url) {
-  url = url || await browser.tab.get(tabId).url;
+  url = url || await browser.tabs.get(tabId).url;
   gCurrentlyPromptingTab = {id: tabId, url};
   await updatePageActionIcon(tabId);
   await browser.pageAction.show(tabId);
@@ -908,7 +952,11 @@ async function onMessageFromPageAction(message) {
 
   if ("neverShowAgain" in message) {
     const after = () => {
-      browser.study.endStudy("user-disable").then(deactivate).catch(deactivate);
+      try {
+        browser.study.endStudy("user-disable").then(deactivate).catch(deactivate);
+      } catch (_) {
+        deactivate();
+      }
     };
     tabState.maybeSendTelemetry({clickedDontShowAgain: "yes"}).catch(after).then(after);
     return undefined;
@@ -983,10 +1031,20 @@ function activate() {
   active = true;
 }
 
-function deactivate() {
+function deactivate(studyEndInfo = {}) {
+  // If the user was testing toggling the UI variation pref, don't deactivate.
+  if (studyEndInfo.endingName === "testing") {
+    return;
+  }
+
+  for (const url of studyEndInfo.urls || []) {
+    browser.tabs.create({url});
+  }
+
   if (!active) {
     return;
   }
+
   active = false;
   cancelCurrentPromptDelay();
   VisitTimeTracker.stop();
@@ -996,7 +1054,9 @@ function deactivate() {
   browser.windows.onFocusChanged.removeListener(onWindowChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
-  browser.management.uninstallSelf();
+  if (studyEndInfo.shouldUninstall) {
+    browser.management.uninstallSelf();
+  }
 }
 
 Config.load().then(activate).catch(loadingError => {
@@ -1092,3 +1152,11 @@ function closePageAction() {
     portToPageAction.send("closePopup");
   }
 }
+
+browser.commands.onCommand.addListener(async command => {
+  if (command === "show-popup" && Config.testingMode) {
+    cancelCurrentPromptDelay();
+    const {id, url} = await getActiveTab();
+    promptUser(id, url);
+  }
+});

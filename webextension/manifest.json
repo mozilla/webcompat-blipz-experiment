@@ -64,6 +64,13 @@
       "background.js"
     ]
   },
+  "commands": {
+    "show-popup": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      }
+    }
+  },
   "page_action": {
     "browser_style": true,
     "default_icon": "icons/broken_page.svg",
