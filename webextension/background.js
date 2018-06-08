@@ -112,6 +112,10 @@ const Config = (function() {
         return;
       }
 
+      if (this._testingMode) {
+        console.info("Resetting add-on state");
+      }
+
       cancelCurrentPromptDelay();
 
       gCurrentlyPromptingTab = undefined;
@@ -314,24 +318,37 @@ const Config = (function() {
     shouldPromptUserNow(domain) {
       // Only prompt users at most five times.
       if (this._totalPrompts > 4) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domain}: have prompted 5 times already`);
+        }
         return false;
       }
 
       const domainMatch = this.findDomainMatch(domain);
       // Only prompt for domains we're interested in.
       if (!domainMatch) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domain}: domain not part of study`);
+        }
         return false;
       }
 
       // Prompt users at most once per domain.
       if (this._domainsToCheck[domainMatch].lastPromptTime) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domainMatch}: already prompted user on this domain`);
+        }
         return false;
       }
 
       // If user has never been prompted, decide based on an
       // even distribution.
       if (!this._lastPromptTime) {
-        return Math.random() > 0.5;
+        const shouldPrompt = Math.random() > 0.5;
+        if (!shouldPrompt && this._testingMode) {
+          console.info(`Not prompting user on ${domainMatch}: random choice`);
+        }
+        return shouldPrompt;
       }
 
       // Only prompt users at most once a day.
@@ -339,17 +356,27 @@ const Config = (function() {
       const oneDay = 1000 * 60 * 60 * 24;
       const nextValidCheckTime = this._lastPromptTime + oneDay;
       if (now < nextValidCheckTime) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domainMatch}: have already prompted user today`);
+        }
         return false;
       }
 
       // Make sure to prompt users at least every 3 days.
       const nextNecessaryCheckTime = this._lastPromptTime + (oneDay * 3);
       if (now > nextNecessaryCheckTime) {
+        if (this._testingMode) {
+          console.info(`Should prompt user now on ${domainMatch}: more than 3 days since last prompt`);
+        }
         return true;
       }
 
       // Between 1-3 days, use an even distribution to decide.
-      return Math.random() > 0.5;
+      const shouldPrompt = Math.random() > 0.5;
+      if (!shouldPrompt && this._testingMode) {
+        console.info(`Not prompting user on ${domainMatch}: random choice`);
+      }
+      return shouldPrompt;
     }
 
     cumulativeMillisecondsSpentOnDomain(url) {
@@ -686,7 +713,15 @@ const TabState = (function() {
     }
 
     maybeSendTelemetry(message) {
-      return browser.study.sendTelemetry(Object.assign({blipz_session_id: this._blipz_session_id}, message));
+      const finalMessage = Object.assign({
+        blipz_session_id: this._blipz_session_id,
+      }, message);
+
+      if (Config.testingMode) {
+        console.info("Sending telemetry", finalMessage);
+      }
+
+      return browser.study.sendTelemetry(finalMessage);
     }
 
     async submitReport() {
@@ -867,6 +902,9 @@ function waitForGoodTimeToPrompt(tabId, url) {
       VisitTimeTracker.onUpdate.removeListener(onCancel);
       browser.tabs.onActivated.removeListener(onCancel);
       browser.windows.onFocusChanged.removeListener(onCancel);
+      if (Config.testingMode) {
+        console.info("Canceled automated prompt");
+      }
       reject();
     };
     browser.runtime.onMessage.addListener(onMessage);
