@@ -995,6 +995,10 @@ function deactivate(studyEndInfo = {}) {
     return;
   }
 
+  for (const url of studyEndInfo.urls || []) {
+    browser.tabs.create({url});
+  }
+
   if (!active) {
     return;
   }
