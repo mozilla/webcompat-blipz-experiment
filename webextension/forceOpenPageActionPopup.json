@@ -1,0 +1,15 @@
+[
+  {
+    "namespace": "experiments.pageAction",
+    "description": "experimental pageAction API extensions",
+    "functions": [
+      {
+        "name": "forceOpenPopup",
+        "type": "function",
+        "description": "Opens the page action popup regardless of whether the request is made in a user-driven event",
+        "parameters": [],
+        "async": true
+      }
+    ]
+  }
+]

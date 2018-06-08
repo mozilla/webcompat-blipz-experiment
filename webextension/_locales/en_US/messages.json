@@ -1,0 +1,143 @@
+{
+  "addonName": {
+    "message": "Webcompat Blipz Experiment"
+  },
+  "addonDescription": {
+    "message": "An experiment to gather user feedback for websites broken by webcompat issues."
+  },
+  "addonAuthorsList": {
+    "message": "Thomas Wisniewski <twisniewski@mozilla.com>"
+  },
+
+  "buttonCancel": {
+    "message": "Cancel"
+  },
+  "buttonRemoveScreenshot": {
+    "message": "Remove screenshot"
+  },
+  "buttonTakeScreenshot": {
+    "message": "Attach a Screenshot"
+  },
+  "buttonOK": {
+    "message": "OK"
+  },
+  "buttonNo": {
+    "message": "No"
+  },
+  "buttonSubmit": {
+    "message": "Submit"
+  },
+  "buttonYes": {
+    "message": "Yes"
+  },
+
+  "detailLabel_appVersion": {
+    "message": "Version:"
+  },
+  "detailLabel_buildID": {
+    "message": "Build ID:"
+  },
+  "detailLabel_channel": {
+    "message": "Channel:"
+  },
+  "detailLabel_description": {
+    "message": "Description:"
+  },
+  "detailLabel_experimentBranch": {
+    "message": "Experiment Branch:"
+  },
+  "detailLabel_platform": {
+    "message": "Platform:"
+  },
+  "detailLabel_type": {
+    "message": "Type:"
+  },
+  "detailLabel_url": {
+    "message": "URL:"
+  },
+
+  "errorScreenshotFail": {
+    "message": "Error taking a screenshot"
+  },
+  "errorSendingReport": {
+    "message": "Error sending report"
+  },
+
+  "issueLabelDesktopNotMobile": {
+    "message": "Desktop site instead of mobile site"
+  },
+  "issueLabelSiteUnusable": {
+    "message": "Site is not usable"
+  },
+  "issueLabelBrokenDesign": {
+    "message": "Design is broken"
+  },
+  "issueLabelPlaybackFailure": {
+    "message": "Video or audio doesn't play"
+  },
+  "issueLabelOther": {
+    "message": "Something else"
+  },
+
+  "labelLearnMore": {
+    "message": "Learn More"
+  },
+  "labelNeverShowAgain": {
+    "message": "Don't show this again"
+  },
+
+  "placeholderIssueType": {
+    "message": "Type of issue"
+  },
+  "placeholderDescription": {
+    "message": "Description"
+  },
+
+  "titleInitialPromptBasic": {
+    "message": "Are you satisfied with how this website works in Firefox?"
+  },
+  "textInitialPromptBasic": {
+    "message": "Help us make the web better for everyone."
+  },
+  "titleInitialPromptFriendly": {
+    "message": "Firefox wants to know: are you satisfied with the way this website is working?"
+  },
+  "textInitialPromptFriendly": {
+    "message": "Help us to better detect issues with the web."
+  },
+  "linkInitialPrompt": {
+    "message": "Why am I seeing this?"
+  },
+
+  "titleThankYou": {
+    "message": "Thank you!"
+  },
+
+  "titleThankYouFeedback": {
+    "message": "Thank you. Your feedback helps us make Firefox - and the web - better."
+  },
+  "textThankYouFeedback": {
+    "message": "If you experience problems again, you can report them by selecting the broken page icon from the address bar."
+  },
+
+  "titleFeedbackForm": {
+    "message": "Share Your Feedback"
+  },
+  "textFeedbackForm": {
+    "message": "Please tell us more about your experience on this site so we can understand and fix the issue."
+  },
+
+  "titleFeedbackDetails": {
+    "message": "Feedback details"
+  },
+  "textFeedbackDetails": {
+    "message": "This data is non-public. Only certain Mozilla employees will have access to this data."
+  },
+  "linkShowFeedbackDetails": {
+    "message": "See what data I am sending"
+  },
+
+  "textScreenshotOfIssue": {
+    "message": "Screenshot of Issue:"
+  }
+}

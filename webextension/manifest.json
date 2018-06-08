@@ -1,0 +1,73 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_addonName__",
+  "default_locale": "en_US",
+  "description": "__MSG_addonDescription__",
+  "author": "__MSG_addonAuthorsList__",
+  "version": "1.0",
+  "homepage_url": "https://github.com/mozilla/webcompat-blipz-experiment",
+  "applications": {
+    "gecko": {
+      "id": "webcompat-blipz-experiment@mozilla.org"
+    }
+  },
+  "experiment_apis": {
+    "aboutConfigPrefs": {
+      "schema": "aboutConfigPrefs.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "aboutConfigPrefs.js",
+        "paths": [["experiments", "aboutConfigPrefs"]]
+      }
+    },
+    "browserInfo": {
+      "schema": "browserInfo.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "browserInfo.js",
+        "paths": [["experiments", "browserInfo"]]
+      }
+    },
+    "forceOpenPageActionPopup": {
+      "schema": "forceOpenPageActionPopup.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "forceOpenPageActionPopup.js",
+        "paths": [["experiments", "pageAction"]]
+      }
+    },
+    "study": {
+      "schema": "shieldStudies.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "shieldStudies.js",
+        "paths": [["study"]]
+      }
+    }
+  },
+  "icons": {
+    "16": "icons/broken_page.svg",
+    "32": "icons/broken_page.svg",
+    "48": "icons/broken_page.svg",
+    "96": "icons/broken_page.svg",
+    "128": "icons/broken_page.svg"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "webNavigation",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": [
+      "visitTimeTracker.js",
+      "background.js"
+    ]
+  },
+  "page_action": {
+    "browser_style": true,
+    "default_icon": "icons/broken_page.svg",
+    "default_title": "__MSG_addonName__",
+    "default_popup": "popup.html"
+  }
+}

@@ -1,0 +1,36 @@
+[
+  {
+    "namespace": "experiments.browserInfo",
+    "description": "experimental API extensions to get browser info not exposed via web APIs",
+    "functions": [
+      {
+        "name": "getAppVersion",
+        "type": "function",
+        "description": "Gets the app version",
+        "parameters": [],
+        "async": true
+      },
+      {
+        "name": "getBuildID",
+        "type": "function",
+        "description": "Gets the build ID",
+        "parameters": [],
+        "async": true
+      },
+      {
+        "name": "getPlatform",
+        "type": "function",
+        "description": "Gets the platform",
+        "parameters": [],
+        "async": true
+      },
+      {
+        "name": "getUpdateChannel",
+        "type": "function",
+        "description": "Gets the update channel",
+        "parameters": [],
+        "async": true
+      }
+    ]
+  }
+]

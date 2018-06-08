@@ -1,0 +1,302 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+body {
+  min-width: 36em;
+  max-width: 36em;
+}
+input,
+label,
+button,
+select {
+  cursor: pointer;
+}
+input[type="button"],
+button,
+select,
+textarea {
+  border-radius: 3px;
+  border: 1px solid #e1e1e1;
+  width: 100%;
+  background: #f1f1f1;
+  padding: 0 0.5em;
+  height: 2.5em;
+}
+input[type="button"],
+button,
+select {
+  line-height: 2.5em;
+}
+textarea {
+  box-sizing: content-box;
+  width: calc(100% - 1.25em) !important;
+  padding: 0.5em;
+  min-height: 3.5em;
+}
+input[type="button"],
+textarea {
+  background: #fff;
+}
+button {
+  text-align: center;
+}
+section {
+  background-position: 24px 1.5em;
+  background-repeat: no-repeat;
+  background-size: 32px 32px;
+}
+section:not(.active) {
+  display: none;
+}
+section > h1 {
+  font-size: 1.2rem;
+  line-height: 1.2em;
+  margin-top: 1em;
+}
+section > h2 {
+  position: relative;
+  font-size: 1.1rem;
+  line-height: 1.2em;
+  text-align: center;
+  padding: 0.75em 45px 0.75em 75px;
+  margin-bottom: 1.25em;
+  border-bottom: 1px solid #e1e1e1;
+}
+section > a,
+section > p,
+section > h1,
+section > div,
+section > form,
+section > label,
+section > table {
+  margin-left: 75px;
+  margin-right: 45px;
+}
+section > label,
+section > label > *,
+section > label::after {
+  display: block;
+  line-height: 1.2em;
+  height: 1.2em;
+}
+section > label > * {
+  position: absolute;
+}
+section > label::after {
+  margin-left: 1.5em;
+}
+section > h1 + :not(button) {
+  margin-top: 0.75em;
+}
+section > :not(button):last-child {
+  padding-bottom: 2em;
+}
+section > a {
+  display: inline-block;
+  text-decoration: none;
+  padding: 0;
+  margin-top: 0.25em;
+  margin-bottom: 0.5em;
+}
+section > label {
+  margin-top: 0.75em;
+  margin-bottom: 1.25em;
+}
+section > p,
+section > button,
+section > label,
+section > table {
+  font-size: 1rem;
+  line-height: 1.25em;
+}
+section > table tr {
+  display: block;
+}
+section > table th {
+  font-weight: bold;
+  padding-right: 0.5em;
+}
+section > table th,
+section > table td {
+  display: inline;
+}
+section > form > * {
+  display: block;
+  width: 100%;
+  margin-top: 1em;
+}
+section > button {
+  border: 0;
+  border-top: 1px solid #e1e1e1;
+  border-radius: 0;
+  width: 50%;
+  float: left;
+  height: 3em;
+}
+section > * + button,
+section > * + button + button {
+  margin-top: 0.75em;
+}
+section > h2 > button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 100%;
+  border: none;
+  padding: 0;
+  background-color: transparent;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+}
+section > button + button {
+  border-left: 1px solid #e1e1e1;
+}
+section > h1 + button,
+section > h1 + button + button {
+  margin-top: 1em;
+}
+button.emphasize,
+button:active,
+button:focus {
+  color: #fff;
+  background-color: #0260de;
+}
+#thankYou > h1 {
+  margin-top: 1.75em;
+}
+#thankYouFeedback > a {
+  float: right;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+#feedbackForm select,
+#feedbackForm textarea {
+  margin-bottom: 0.5em;
+}
+#feedbackForm > label {
+  margin-bottom: 0;
+}
+
+.takeScreenshot,
+.screenshot {
+  display: block;
+}
+.screenshot {
+  padding-right: 16px;
+}
+.screenshot > * {
+  vertical-align: top;
+  display: inline-block;
+}
+.screenshot > img {
+  cursor: pointer;
+  display: none;
+  margin-left: 0.5em;
+  max-width: 50%;
+  max-height: 14em;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+.screenshot > button {
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  margin-left: -22px;
+  margin-top: -10px;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-size: 12px 12px;
+  background-image: url(icons/remove.svg);
+  border: 1px solid #e1e1e1;
+  border-radius: 15px;
+  box-shadow: 0 2px 2px rgba(128, 128, 128, 0.2);
+}
+section > button:only-of-type {
+  margin-top: 0.75em;
+  width: 100%;
+}
+section > h1 + button:only-of-type {
+  margin-top: 2.5em;
+}
+#thankYou,
+#thankYouFeedback {
+  background-image: url(icons/done.svg);
+}
+#initialPrompt {
+  background-image: url(icons/broken_page.svg);
+}
+button[data-action="back"] {
+  background-image: url(icons/back.svg);
+  background-size: 12px 12px;
+}
+
+#feedbackDetails .screenshot {
+  margin-top: 1em;
+}
+#feedbackDetails p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.no-context #initialPrompt a,
+.no-context #thankYou p,
+.no-context #thankYouFeedback p,
+.no-context #thankYouFeedback a,
+.little-context #thankYouFeedback p,
+.little-context #thankYouFeedback a {
+  display: none;
+}
+
+#initialPrompt > h1::before { content: "__MSG_titleInitialPromptFriendly__"; }
+#initialPrompt > p::before { content: "__MSG_textInitialPromptFriendly__"; }
+#initialPrompt > a::before { content: "__MSG_linkInitialPrompt__"; }
+
+#initialPrompt > label::after { content: "__MSG_labelNeverShowAgain__"; }
+
+#thankYou > h1::before { content: "__MSG_titleThankYou__"; }
+
+#thankYouFeedback > h1::before { content: "__MSG_titleThankYouFeedback__"; }
+#thankYouFeedback > p::before { content: "__MSG_textThankYouFeedback__"; }
+#thankYouFeedback > a::after { content: "__MSG_labelLearnMore__"; }
+
+.screenshot > p::after { content: "__MSG_textScreenshotOfIssue__"; }
+
+#feedbackForm > h2::before { content: "__MSG_titleFeedbackForm__"; }
+#feedbackForm > p::after { content: "__MSG_textFeedbackForm__"; }
+#feedbackForm > a::after { content: "__MSG_linkShowFeedbackDetails__"; }
+
+#feedbackDetails > h2::before { content: "__MSG_titleFeedbackDetails__"; }
+#feedbackDetails > p::before { content: "__MSG_textFeedbackDetails__"; }
+
+.no-context #initialPrompt > h1::before { content: "__MSG_titleInitialPromptBasic__"; }
+.no-context #initialPrompt > p::before { content: "__MSG_textInitialPromptBasic__"; }
+
+[data-detail="url"] > th::before { content: "__MSG_detailLabel_url__"; }
+[data-detail="type"] > th::before { content: "__MSG_detailLabel_type__"; }
+[data-detail="description"] > th::before { content: "__MSG_detailLabel_description__"; }
+[data-detail="channel"] > th::before { content: "__MSG_detailLabel_channel__"; }
+[data-detail="appVersion"] > th::before { content: "__MSG_detailLabel_appVersion__"; }
+[data-detail="platform"] > th::before { content: "__MSG_detailLabel_platform__"; }
+[data-detail="buildID"] > th::before { content: "__MSG_detailLabel_buildID__"; }
+[data-detail="uiVariant"] > th::before { content: "__MSG_detailLabel_experimentBranch__"; }
+
+button[data-action="ok"]::before { content: "__MSG_buttonOK__"; }
+button[data-action="yes"]::before { content: "__MSG_buttonYes__"; }
+button[data-action="no"]::before { content: "__MSG_buttonNo__"; }
+button[data-action="submit"]::before { content: "__MSG_buttonSubmit__"; }
+button[data-action="cancel"]::before { content: "__MSG_buttonCancel__"; }
+
+.takeScreenshot::before {
+  content: "__MSG_buttonTakeScreenshot__";
+  background: url(icons/screenshot.svg) no-repeat;
+  padding-left: 24px;
+}
