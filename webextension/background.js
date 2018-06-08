@@ -88,7 +88,7 @@ const Config = (function() {
 
     async _onVariationPrefChanged(variationPref) {
       // Users may set to an invalid value to request the addon to reset its state.
-      const isResetRequest = variationPref !== undefined && !UIVariants.includes(variationPref);
+      const isResetRequest = variationPref === undefined || !UIVariants.includes(variationPref);
 
       // If the variation pref is actually present, we are in testing mode.
       this._testingMode = variationPref !== undefined;
@@ -758,6 +758,8 @@ async function onTabChanged(info) {
 }
 
 async function handleTabChange(tabId, url) {
+  cancelCurrentPromptDelay();
+
   if (!Config.isPromptableURL(url)) {
     browser.pageAction.hide(tabId);
     return;
@@ -801,6 +803,7 @@ async function onNavigationCommitted(navDetails) {
   if (gCurrentlyPromptingTab &&
       gCurrentlyPromptingTab.id === tabId &&
       gCurrentlyPromptingTab.url !== url) {
+    cancelCurrentPromptDelay();
     gCurrentlyPromptingTab = undefined;
     TabState.reset(tabId);
   }
@@ -894,7 +897,7 @@ function cancelCurrentPromptDelay() {
 }
 
 async function promptUser(tabId, url) {
-  url = url || await browser.tab.get(tabId).url;
+  url = url || await browser.tabs.get(tabId).url;
   gCurrentlyPromptingTab = {id: tabId, url};
   await updatePageActionIcon(tabId);
   await browser.pageAction.show(tabId);
@@ -1110,3 +1113,11 @@ function closePageAction() {
     portToPageAction.send("closePopup");
   }
 }
+
+browser.commands.onCommand.addListener(async command => {
+  if (command === "show-popup" && Config.testingMode) {
+    cancelCurrentPromptDelay();
+    const {id, url} = await getActiveTab();
+    promptUser(id, url);
+  }
+});
