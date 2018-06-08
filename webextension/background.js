@@ -94,7 +94,9 @@ const Config = (function() {
       this._testingMode = variationPref !== undefined;
 
       // Start a new shield study with the correct testingMode and requested variant (if any).
-      await browser.study.endStudy("testing").catch(() => Promise.resolve());
+      try {
+        await browser.study.endStudy("testing");
+      } catch (_) {}
       this._uiVariant = variationPref;
       const studyInfo = await this._activateShield();
 
@@ -136,7 +138,7 @@ const Config = (function() {
         allowEnroll: true,
         studyType: "shield",
         telemetry: {
-          send: true,
+          send: !this._testingMode,
           removeTestingFlag: !this._testingMode,
         },
         endings: {
@@ -155,7 +157,6 @@ const Config = (function() {
             category: "ended-neutral",
           },
         },
-        logLevel: this._testingMode ? 30 : 0,
         weightedVariations: UIVariants.map(name => {
           return {name, weight: 1};
         }),
@@ -186,10 +187,11 @@ const Config = (function() {
           this._shieldActivatedPromise = undefined;
           resolve(studyInfo);
         };
-        browser.study.onReady.addListener(readyListener);
         browser.study.onEndStudy.addListener(endListener);
+        browser.study.onReady.addListener(readyListener);
+        browser.studyDebug.reset();
         try {
-          browser.study.setup(this.shieldStudySetup).catch(reject);
+          browser.study.setup(this.shieldStudySetup).catch(endListener);
         } catch (err) {
           endListener(err);
         }
@@ -908,7 +910,11 @@ async function onMessageFromPageAction(message) {
 
   if ("neverShowAgain" in message) {
     const after = () => {
-      browser.study.endStudy("user-disable").then(deactivate).catch(deactivate);
+      try {
+        browser.study.endStudy("user-disable").then(deactivate).catch(deactivate);
+      } catch (_) {
+        deactivate();
+      }
     };
     tabState.maybeSendTelemetry({clickedDontShowAgain: "yes"}).catch(after).then(after);
     return undefined;
@@ -983,10 +989,16 @@ function activate() {
   active = true;
 }
 
-function deactivate() {
+function deactivate(studyEndInfo = {}) {
+  // If the user was testing toggling the UI variation pref, don't deactivate.
+  if (studyEndInfo.endingName === "testing") {
+    return;
+  }
+
   if (!active) {
     return;
   }
+
   active = false;
   cancelCurrentPromptDelay();
   VisitTimeTracker.stop();
@@ -996,7 +1008,9 @@ function deactivate() {
   browser.windows.onFocusChanged.removeListener(onWindowChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
-  browser.management.uninstallSelf();
+  if (studyEndInfo.shouldUninstall) {
+    browser.management.uninstallSelf();
+  }
 }
 
 Config.load().then(activate).catch(loadingError => {
