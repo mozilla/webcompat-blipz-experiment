@@ -97,7 +97,7 @@ const Config = (function() {
       try {
         await browser.study.endStudy("testing");
       } catch (_) {}
-      this._uiVariant = variationPref;
+      this._uiVariant = isResetRequest ? "" : variationPref;
       const studyInfo = await this._activateShield();
 
       // Check if Shield chose a different variant for us (ie, if the pref was not set).
