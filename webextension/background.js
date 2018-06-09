@@ -73,7 +73,8 @@ const Config = (function() {
     _onAboutConfigPrefChanged(name) {
       if (name === "variation") {
         browser.experiments.aboutConfigPrefs.getString("variation").then(value => {
-          if (value !== this._uiVariant) {
+          if (value !== this._variationPref) {
+            this._variationPref = value;
             this._onVariationPrefChanged(value);
           }
         });
@@ -211,6 +212,7 @@ const Config = (function() {
         browser.experiments.browserInfo.getUpdateChannel(),
         browser.experiments.aboutConfigPrefs.getString("variation").then(async value => {
           // This will init the Shield study and ensure that the variation is valid.
+          this._variationPref = value;
           await this._onVariationPrefChanged(value);
           return value;
         }),
