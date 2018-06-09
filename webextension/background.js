@@ -6,6 +6,8 @@
 
 /* globals browser, VisitTimeTracker */
 
+browser.experiments.pageAction.concealFromPanel();
+
 let gCurrentlyPromptingTab;
 
 let gCancelCurrentPromptDelayCallback;

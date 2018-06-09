@@ -28,11 +28,11 @@
         "paths": [["experiments", "browserInfo"]]
       }
     },
-    "forceOpenPageActionPopup": {
-      "schema": "forceOpenPageActionPopup.json",
+    "pageActionExtras": {
+      "schema": "pageActionExtras.json",
       "parent": {
         "scopes": ["addon_parent"],
-        "script": "forceOpenPageActionPopup.js",
+        "script": "pageActionExtras.js",
         "paths": [["experiments", "pageAction"]]
       }
     },
