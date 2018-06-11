@@ -12,17 +12,54 @@ ChromeUtils.defineModuleGetter(this, "PageActions",
 ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
                                      "resource:///modules/BrowserWindowTracker.jsm");
 
-this.forceOpenPageActionPopup = class extends ExtensionAPI {
+class PageActionPanelNodeManager {
+  constructor(pageAction) {
+    const oldAddedListener = pageAction._onPlacedInPanel;
+    this._concealed = false;
+    pageAction._onPlacedInPanel = node => {
+      this._node = node;
+      if (this._concealed) {
+        node.style.display = "none";
+      }
+      if (oldAddedListener) {
+        oldAddedListener(node);
+      }
+    };
+  }
+  unconceal() {
+    this._concealed = false;
+    if (this._node) {
+      this._node.style.display = "";
+    }
+  }
+  conceal() {
+    this._concealed = true;
+    if (this._node) {
+      this._node.style.display = "none";
+    }
+  }
+}
+
+this.pageActionExtras = class extends ExtensionAPI {
   getAPI(context) {
     const extension = context.extension;
     const pageActionAPI = extension.apiManager.getAPI("pageAction", extension,
                                                       context.envType);
+    const actionId = ExtensionUtils.makeWidgetId(extension.id);
+    const action = PageActions.actionForID(actionId);
+    const panelNode = new PageActionPanelNodeManager(action);
     return {
       experiments: {
         pageAction: {
           async forceOpenPopup() {
             const window = BrowserWindowTracker.getTopWindow();
             pageActionAPI.handleClick(window);
+          },
+          async concealFromPanel() {
+            panelNode.conceal();
+          },
+          async unconcealFromPanel() {
+            panelNode.unconceal();
           },
         },
       },
