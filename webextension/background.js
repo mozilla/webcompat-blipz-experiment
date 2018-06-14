@@ -329,7 +329,7 @@ const Config = (function() {
         return false;
       }
 
-      let domain = url.host;
+      const domain = url.host;
 
       if (!this.isPromptableURL(url)) {
         if (this._testingMode) {
