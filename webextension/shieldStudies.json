@@ -233,7 +233,7 @@
           "activeExperimentName": {
             "type": "string"
           },
-          "timeUntilExpire": {
+          "delayInMinutes": {
             "type": "number"
           },
           "isFirstRun": {
@@ -537,12 +537,12 @@
         "name": "getStudyInfo",
         "type": "function",
         "async": true,
-        "description": "current study configuration, including\n- variation\n- activeExperimentName\n- timeUntilExpire\n- firstRunTimestamp\n- isFirstRun\n\nBut not:\n- telemetry clientId\n\nThrows Error if called before `browser.study.setup`\n",
+        "description": "current study configuration, including\n- variation\n- activeExperimentName\n- delayInMinutes\n- firstRunTimestamp\n- isFirstRun\n\nBut not:\n- telemetry clientId\n\nThrows Error if called before `browser.study.setup`\n",
         "defaultReturn": {
           "variation": "styleA",
           "firstRunTimestamp": 1523968204184,
           "activeExperimentName": "some experiment",
-          "timeUntilExpire": 12
+          "delayInMinutes": 12
         },
         "parameters": [],
         "returns": [
