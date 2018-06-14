@@ -319,7 +319,34 @@ const Config = (function() {
       return ["http:", "https:"].includes(url.protocol);
     }
 
-    shouldPromptUserNow(domain) {
+    async shouldPromptUser(tabId, url) {
+      try {
+        url = new URL(url);
+      } catch (_) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${url}: invalid URL`);
+        }
+        return false;
+      }
+
+      let domain = url.host;
+
+      if (!this.isPromptableURL(url)) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${url}: not a promptable URL`);
+        }
+        return false;
+      }
+
+      // Do not prompt on private-browsing tabs.
+      if (this._skipPrivateBrowsingTabs &&
+          (await browser.tabs.get(tabId)).incognito) {
+        if (this._testingMode) {
+          console.info(`Not prompting user on ${domain}: study not run for private tabs`);
+        }
+        return false;
+      }
+
       // Only prompt users at most five times.
       if (this._totalPrompts > 4) {
         if (this._testingMode) {
@@ -464,18 +491,6 @@ const Config = (function() {
 
   return new Config();
 }());
-
-async function shouldPromptUser(tabId, url) {
-  try {
-    url = new URL(url);
-    return Config.isPromptableURL(url) &&
-           Config.shouldPromptUserNow(url.host) &&
-           (!Config.skipPrivateBrowsingTabs ||
-            !(await browser.tabs.get(tabId)).incognito);
-  } catch (_) {
-    return false;
-  }
-}
 
 function yesOrNo(bool) {
   return bool ? "yes" : "no";
@@ -869,7 +884,7 @@ async function onNavigationCompleted(navDetails) {
 }
 
 async function maybePromptUser(tabId, url) {
-  if (await shouldPromptUser(tabId, url)) {
+  if (await Config.shouldPromptUser(tabId, url)) {
     await waitForGoodTimeToPrompt(tabId, url);
     await promptUser(tabId, url);
   }
