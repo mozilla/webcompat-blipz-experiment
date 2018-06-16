@@ -167,7 +167,7 @@ const Config = (function() {
         allowEnroll: true,
         studyType: "shield",
         telemetry: {
-          send: !this._testingMode,
+          send: true,
           removeTestingFlag: !this._testingMode,
         },
         endings: {
