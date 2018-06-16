@@ -14,7 +14,7 @@ let gCancelCurrentPromptDelayCallback;
 
 const Config = (function() {
   browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall([
-    "reportEndpoint", "variation"
+    "reportEndpoint", "variation", "firstRunTimestamp"
   ]);
 
   const UIVariants = ["more-context", "little-context", "no-context"];
@@ -56,6 +56,10 @@ const Config = (function() {
 
       browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
         this._onAboutConfigPrefChanged.bind(this), "variation");
+      browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
+        this._onAboutConfigPrefChanged.bind(this), "reportEndpoint");
+      browser.experiments.aboutConfigPrefs.onPrefChange.addListener(
+        this._onAboutConfigPrefChanged.bind(this), "firstRunTimestamp");
 
       VisitTimeTracker.onUpdate.addListener(this._onVisitTimeUpdate.bind(this));
     }
@@ -72,6 +76,20 @@ const Config = (function() {
       } catch (_) { }
     }
 
+    _onFirstRunTimestampChanged(firstRunTimestamp) {
+      const ms = 14 * 86400 * 1000; // 14 days
+      const delayInMinutes = Math.max(firstRunTimestamp + ms - Date.now(), 0);
+      const alarmName = `${browser.runtime.id}:studyExpiration`;
+      const alarmListener = async alarm => {
+        if (alarm.name === alarmName) {
+          browser.alarms.onAlarm.removeListener(alarmListener);
+          await browser.study.endStudy("expired");
+        }
+      };
+      browser.alarms.onAlarm.addListener(alarmListener);
+      browser.alarms.create(alarmName, { delayInMinutes });
+    }
+
     _onAboutConfigPrefChanged(name) {
       if (name === "variation") {
         browser.experiments.aboutConfigPrefs.getString("variation").then(value => {
@@ -79,6 +97,10 @@ const Config = (function() {
             this._variationPref = value;
             this._onVariationPrefChanged(value);
           }
+        });
+      } else if (name === "firstRunTimestamp") {
+        browser.experiments.aboutConfigPrefs.getString("firstRunTimestamp").then(value => {
+          this._onFirstRunTimestampChanged(parseInt(value));
         });
       } else if (name === "reportEndpoint") {
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint").then(value => {
@@ -168,7 +190,7 @@ const Config = (function() {
           return {name, weight: 1};
         }),
         expire: {
-          days: 14,
+          days: 100000000, // We handle expiry ourselves via browser.alarm (#108)
         },
         testing: {
           variationName: this._uiVariant,
@@ -219,13 +241,20 @@ const Config = (function() {
           return value;
         }),
         browser.experiments.aboutConfigPrefs.getString("reportEndpoint"),
+        browser.experiments.aboutConfigPrefs.getString("firstRunTimestamp"),
         browser.storage.local.get(),
       ]).then(([appVersion, buildID, platform, releaseChannel,
-                variationPref, landingPref, otherPrefs]) => {
+                variationPref, landingPref, firstRunTimestamp, otherPrefs]) => {
         this._appVersion = appVersion;
         this._buildID = buildID;
         this._platform = platform;
         this._releaseChannel = releaseChannel;
+
+        if (firstRunTimestamp !== undefined) {
+          this._onFirstRunTimestampChanged(parseInt(firstRunTimestamp));
+        } else {
+          browser.experiments.aboutConfigPrefs.setString("firstRunTimestamp", Date.now().toString());
+        }
 
         // Store the report landing URL in an about:config preference
         // so that mochitests can more easily override the value.

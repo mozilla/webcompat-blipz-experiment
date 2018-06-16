@@ -53,6 +53,7 @@
     "128": "icons/broken_page.svg"
   },
   "permissions": [
+    "alarms",
     "storage",
     "tabs",
     "webNavigation",
