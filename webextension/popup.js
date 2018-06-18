@@ -45,6 +45,45 @@ const portToBGScript = (function() {
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", handleClick);
 
+  for (const [selector, msg] of Object.entries({
+    "#initialPrompt > h1.no-context": "titleInitialPromptBasic",
+    "#initialPrompt > p.no-context": "textInitialPromptBasic",
+    "#initialPrompt > h1.little-context": "titleInitialPromptFriendly",
+    "#initialPrompt > p.little-context": "textInitialPromptFriendly",
+    "#initialPrompt > h1.more-context": "titleInitialPromptFriendly",
+    "#initialPrompt > p.more-context": "textInitialPromptFriendly",
+    "#initialPrompt > a": "linkInitialPrompt",
+    "#initialPrompt > label": "labelNeverShowAgain",
+    "#thankYou > h1": "titleThankYou",
+    "#thankYouFeedback > h1": "titleThankYouFeedback",
+    "#thankYouFeedback > p": "textThankYouFeedback",
+    "#thankYouFeedback > a": "labelLearnMore",
+    ".screenshot > p": "textScreenshotOfIssue",
+    "#feedbackForm > h2": "titleFeedbackForm",
+    "#feedbackForm > p": "textFeedbackForm",
+    "#feedbackForm > a": "linkShowFeedbackDetails",
+    "#feedbackDetails > h2": "titleFeedbackDetails",
+    "#feedbackDetails > p": "textFeedbackDetails",
+    "[data-detail='url'] > th": "detailLabel_url",
+    "[data-detail='type'] > th": "detailLabel_type",
+    "[data-detail='description'] > th": "detailLabel_description",
+    "[data-detail='channel'] > th": "detailLabel_channel",
+    "[data-detail='appVersion'] > th": "detailLabel_appVersion",
+    "[data-detail='platform'] > th": "detailLabel_platform",
+    "[data-detail='buildID'] > th": "detailLabel_buildID",
+    "[data-detail='uiVariant'] > th": "detailLabel_experimentBranch",
+    "button[data-action='ok']": "buttonOK",
+    "button[data-action='yes']": "buttonYes",
+    "button[data-action='no']": "buttonNo",
+    "button[data-action='submit']": "buttonSubmit",
+    "button[data-action='cancel']": "buttonCancel",
+  })) {
+    const txt = browser.i18n.getMessage(msg);
+    for (const node of document.querySelectorAll(selector)) {
+      node.appendChild(document.createTextNode(txt));
+    }
+  }
+
   for (const [value, msgId] of Object.entries(gIssueTypeLabels)) {
     document.querySelector(`option[value="${value}"]`).innerText =
       browser.i18n.getMessage(msgId);
