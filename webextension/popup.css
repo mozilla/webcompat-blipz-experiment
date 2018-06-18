@@ -40,6 +40,11 @@ textarea {
   padding: 0.5em;
   min-height: 3.5em;
 }
+textarea,
+[data-detail="description"] {
+  max-height: 20em;
+  overflow-y: auto;
+}
 input[type="button"],
 textarea {
   background: #fff;
