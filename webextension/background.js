@@ -1140,6 +1140,7 @@ async function handleButtonClick(command, tabState) {
       if (command === "submit") {
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
+        tabState.markAsVerified();
       } else if (command === "showFeedbackDetails") {
         tabState.slide = "feedbackDetails";
         tabState.maybeUpdatePageAction(["type", "description"]);
@@ -1148,9 +1149,9 @@ async function handleButtonClick(command, tabState) {
       } else if (command === "cancel") {
         closePageAction();
         tabState.reset();
+        tabState.markAsVerified();
         tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
       }
-      tabState.markAsVerified();
       break;
     }
     case "feedbackDetails": {
