@@ -12,6 +12,9 @@ ChromeUtils.defineModuleGetter(this, "PageActions",
 ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
                                      "resource:///modules/BrowserWindowTracker.jsm");
 
+ChromeUtils.defineModuleGetter(this, "RecentWindow",
+                                     "resource:///modules/RecentWindow.jsm");
+
 class PageActionPanelNodeManager {
   constructor(pageAction) {
     const oldAddedListener = pageAction._onPlacedInPanel;
@@ -40,20 +43,30 @@ class PageActionPanelNodeManager {
   }
 }
 
+function makeWidgetId(id) {
+  id = id.toLowerCase();
+  // FIXME: This allows for collisions.
+  // WebExt hasn't ever had a problem.
+  return id.replace(/[^a-z0-9_-]/g, "_");
+}
+
 this.pageActionExtras = class extends ExtensionAPI {
   getAPI(context) {
     const extension = context.extension;
     const pageActionAPI = extension.apiManager.getAPI("pageAction", extension,
                                                       context.envType);
-    const actionId = ExtensionUtils.makeWidgetId(extension.id);
+    const actionId = makeWidgetId(extension.id);
     const action = PageActions.actionForID(actionId);
     const panelNode = new PageActionPanelNodeManager(action);
     return {
       experiments: {
         pageAction: {
           async forceOpenPopup() {
-            const window = BrowserWindowTracker.getTopWindow();
-            pageActionAPI.handleClick(window);
+            try {
+              pageActionAPI.handleClick(BrowserWindowTracker.getTopWindow());
+            } catch (e) {
+              pageActionAPI.handleClick(RecentWindow.getMostRecentBrowserWindow());
+            }
           },
           async concealFromPanel() {
             panelNode.conceal();

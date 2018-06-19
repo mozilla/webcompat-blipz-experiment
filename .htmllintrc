@@ -1,6 +1,6 @@
 {
   "head-req-title": null,
-  "id-class-style": "camel",
+  "id-class-style": false,
   "indent-width": 2,
   "indent-width-cont": true,
   "img-req-alt": "allownull"
