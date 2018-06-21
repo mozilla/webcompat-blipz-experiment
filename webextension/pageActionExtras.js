@@ -17,12 +17,13 @@ ChromeUtils.defineModuleGetter(this, "RecentWindow",
 
 class PageActionPanelNodeManager {
   constructor(pageAction) {
-    const oldAddedListener = pageAction._onPlacedInPanel;
+    const oldAddedListener = pageAction._onShowingInPanel;
     this._concealed = false;
-    pageAction._onPlacedInPanel = node => {
+    pageAction._onShowingInPanel = node => {
       this._node = node;
       if (this._concealed) {
         node.style.display = "none";
+        this._maybeHidePreviousSeparator();
       }
       if (oldAddedListener) {
         oldAddedListener(node);
@@ -33,12 +34,46 @@ class PageActionPanelNodeManager {
     this._concealed = false;
     if (this._node) {
       this._node.style.display = "";
+      this._maybeHidePreviousSeparator();
     }
   }
   conceal() {
     this._concealed = true;
     if (this._node) {
       this._node.style.display = "none";
+      this._maybeHidePreviousSeparator();
+    }
+  }
+  _maybeHidePreviousSeparator() {
+    // Just hiding our element will not hide our related separator, so
+    // we have to manage its visibility ourselves.
+
+    // Find the last element in our separator group.
+    const lastSibling = this._node.parentNode.lastElementChild;
+    let sib = this._node;
+    if (lastSibling !== sib) {
+      while (sib !== lastSibling && sib.nextElementSibling.nodeName !== "toolbarseparator") {
+        sib = sib.nextElementSibling;
+      }
+    }
+
+    // Walk back up from that element to find the related separator.
+    // If all elements in the group are hidden, we should hide that separator.
+    sib = sib.previousElementSibling;
+    let shouldHideSeparator = true;
+    while (sib && sib.nodeName !== "toolbarseparator") {
+      if (sib.style.display !== "none") {
+        shouldHideSeparator = false;
+      }
+      sib = sib.previousElementSibling;
+    }
+    // If we found a separator, then hide or show it as appropriate.
+    if (sib) {
+      if (shouldHideSeparator) {
+        sib.style.display = "none";
+      } else {
+        sib.style.display = "";
+      }
     }
   }
 }
