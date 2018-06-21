@@ -167,8 +167,7 @@ section > h1 + button + button {
   margin-top: 1em;
 }
 button.emphasize,
-button:active,
-button:focus {
+button:active {
   color: #fff;
   background-color: #0260de;
 }
