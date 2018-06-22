@@ -39,10 +39,13 @@ textarea {
   width: calc(100% - 1.25em) !important;
   padding: 0.5em;
   min-height: 3.5em;
+  max-height: 16em;
+}
+[data-detail="description"] {
+  max-height: 12em;
 }
 textarea,
 [data-detail="description"] {
-  max-height: 20em;
   overflow-y: auto;
 }
 input[type="button"],
@@ -164,8 +167,7 @@ section > h1 + button + button {
   margin-top: 1em;
 }
 button.emphasize,
-button:active,
-button:focus {
+button:active {
   color: #fff;
   background-color: #0260de;
 }
@@ -201,7 +203,7 @@ button:focus {
   display: none;
   margin-left: 0.5em;
   max-width: 50%;
-  max-height: 14em;
+  max-height: 8em;
   border: 1px solid #eee;
   border-radius: 4px;
 }
