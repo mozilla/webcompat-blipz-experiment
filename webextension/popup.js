@@ -115,15 +115,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   autosizeTextArea(document.querySelector("[name=description]"));
+  autosizeTextArea(document.querySelector("[data-detail=description]"));
 });
 
 function autosizeTextArea(el) {
-  el.addEventListener("keydown", function() {
-    requestAnimationFrame(() => {
-      el.style.cssText = "height:auto; padding:0";
-      el.style.cssText = "height:" + el.scrollHeight + "px";
-    });
-  });
+  function resize() {
+    el.style.height = "auto";
+    el.style.padding = "0";
+    const popup = document.scrollingElement;
+    const popupKidHeights = Array.map.call(null, popup.childNodes, n => n.clientHeight);
+    const heightOfRest = popupKidHeights.reduce((a, c) => a + (c || 0), 0) - el.clientHeight;
+    const maxHeight = 588 - heightOfRest; // 588px seems to be the max-height of the popup
+    el.style.height = Math.min(maxHeight, el.scrollHeight) + "px";
+  }
+  if (!el.getAttribute("data-ready")) {
+    el.setAttribute("data-ready", 1);
+    el.addEventListener("keydown", resize);
+    el.addEventListener("keypress", resize);
+    el.addEventListener("keyup", resize);
+    el.addEventListener("compositionstart", resize);
+    el.addEventListener("compositionupdate", resize);
+    el.addEventListener("compositionend", resize);
+  }
+  resize();
 }
 
 function onMessage(update) {
@@ -183,6 +197,9 @@ function onMessage(update) {
       }
     });
   }
+
+  autosizeTextArea(document.querySelector("[name=description]"));
+  autosizeTextArea(document.querySelector("[data-detail=description]"));
 }
 
 async function hideScreenshot() {

@@ -39,10 +39,6 @@ textarea {
   width: calc(100% - 1.25em) !important;
   padding: 0.5em;
   min-height: 3.5em;
-  max-height: 16em;
-}
-[data-detail="description"] {
-  max-height: 12em;
 }
 textarea,
 [data-detail="description"] {
