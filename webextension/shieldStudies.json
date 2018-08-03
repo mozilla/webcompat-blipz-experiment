@@ -29,6 +29,64 @@
         ]
       },
       {
+        "id": "NullableInteger",
+        "$schema": "http://json-schema.org/draft-04/schema",
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "choices": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "testcases": [
+          null,
+          1234567890
+        ],
+        "failcases": [
+          "1234567890",
+          []
+        ]
+      },
+      {
+        "id": "NullableNumber",
+        "$schema": "http://json-schema.org/draft-04/schema",
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "choices": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "testcases": [
+          null,
+          1234567890,
+          1234567890.123
+        ],
+        "failcases": [
+          "1234567890",
+          "1234567890.123",
+          []
+        ]
+      },
+      {
         "id": "studyTypesEnum",
         "$schema": "http://json-schema.org/draft-04/schema",
         "type": "string",
@@ -36,7 +94,13 @@
           "shield",
           "pioneer"
         ],
-        "testcase": "shield"
+        "testcases": [
+          "shield",
+          "pioneer"
+        ],
+        "failcases": [
+          "foo"
+        ]
       },
       {
         "id": "weightedVariationObject",
@@ -54,7 +118,11 @@
         "required": [
           "name",
           "weight"
-        ]
+        ],
+        "testcase": {
+          "name": "feature-active",
+          "weight": 1.5
+        }
       },
       {
         "id": "weightedVariationsArray",
@@ -79,6 +147,10 @@
         "testcase": [
           {
             "name": "feature-active",
+            "weight": 1.5
+          },
+          {
+            "name": "feature-inactive",
             "weight": 1.5
           }
         ]
@@ -228,13 +300,13 @@
             "$ref": "weightedVariationObject"
           },
           "firstRunTimestamp": {
-            "type": "number"
+            "$ref": "NullableInteger"
           },
           "activeExperimentName": {
             "type": "string"
           },
           "delayInMinutes": {
-            "type": "number"
+            "$ref": "NullableNumber"
           },
           "isFirstRun": {
             "type": "boolean"
@@ -293,6 +365,29 @@
             "properties": {
               "variationName": {
                 "$ref": "NullableString",
+                "optional": true
+              },
+              "firstRunTimestamp": {
+                "$ref": "NullableInteger",
+                "optional": true
+              },
+              "expired": {
+                "choices": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ],
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ],
                 "optional": true
               }
             },
@@ -356,7 +451,11 @@
               "send": false,
               "removeTestingFlag": false
             },
-            "testing": {}
+            "testing": {
+              "variationName": "something",
+              "firstRunTimestamp": 1234567890,
+              "expired": true
+            }
           },
           {
             "activeExperimentName": "aStudy",
@@ -379,7 +478,9 @@
               "removeTestingFlag": true
             },
             "testing": {
-              "variationName": "something"
+              "variationName": "something",
+              "firstRunTimestamp": 1234567890,
+              "expired": true
             }
           },
           {
@@ -583,29 +684,6 @@
         ]
       },
       {
-        "name": "surveyUrl",
-        "type": "function",
-        "async": true,
-        "description": "Format url with study covariate queryArgs appended / mixed in.\n\nUse this for constructing midpoint surveys.\n",
-        "defaultReturn": "https://example.com?version=59.0&branch=studyA",
-        "parameters": [
-          {
-            "name": "baseUrl",
-            "type": "string"
-          },
-          {
-            "name": "additionalFields",
-            "type": "object",
-            "optional": true
-          }
-        ],
-        "returns": [
-          {
-            "type": "string"
-          }
-        ]
-      },
-      {
         "name": "validateJSON",
         "type": "function",
         "async": true,
@@ -645,13 +723,6 @@
             ]
           }
         ]
-      },
-      {
-        "name": "uninstall",
-        "type": "function",
-        "async": true,
-        "description": "\nUninstall this addon, using AddonManager.jsm.\n\nNo Telemetry.  No ending event triggered.  Just webExtenion removed.\n",
-        "parameters": []
       }
     ],
     "events": [
@@ -769,30 +840,6 @@
         "async": true,
         "description": "Return `_internals` of the studyUtils object.\n\nUse this for debugging state.\n\nAbout `this._internals`:\n- variation:  (chosen variation, `setup` )\n- isEnding: bool  `endStudy`\n- isSetup: bool   `setup`\n- isFirstRun: bool `setup`, based on pref\n- studySetup: bool  `setup` the config\n- seenTelemetry: object of lists of seen telemetry by bucket\n- prefs: object of all created prefs and their names\n",
         "parameters": []
-      }
-    ]
-  },
-  {
-    "namespace": "prefs",
-    "description": "Temporary subset of `Services.prefs` API,\ndescribed at:  https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/Services.jsm\n\nSee https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIPrefBranch\n\nNo attempt here to improve the api at all.\n\nTODO: Convert observers to events.\n\nIf a true 'prefs' api lands in tree, this module will be removed.\n",
-    "apiVersion": 5,
-    "functions": [
-      {
-        "name": "getStringPref",
-        "type": "function",
-        "async": true,
-        "description": "",
-        "parameters": [
-          {
-            "name": "aPrefName",
-            "type": "string"
-          },
-          {
-            "name": "aDefaultValue",
-            "type": "string",
-            "optional": true
-          }
-        ]
       }
     ]
   }
