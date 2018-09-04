@@ -8,12 +8,8 @@
   "addonAuthorsList": {
     "message": "Thomas Wisniewski <twisniewski@mozilla.com>"
   },
-
   "buttonCancel": {
     "message": "Cancel"
-  },
-  "buttonRemoveScreenshot": {
-    "message": "Remove screenshot"
   },
   "buttonTakeScreenshot": {
     "message": "Attach a Screenshot"
@@ -21,16 +17,9 @@
   "buttonOK": {
     "message": "OK"
   },
-  "buttonNo": {
-    "message": "No"
-  },
   "buttonSubmit": {
     "message": "Submit"
   },
-  "buttonYes": {
-    "message": "Yes"
-  },
-
   "detailLabel_appVersion": {
     "message": "Version:"
   },
@@ -55,16 +44,11 @@
   "detailLabel_url": {
     "message": "URL:"
   },
-
   "errorScreenshotFail": {
     "message": "Error taking a screenshot"
   },
   "errorSendingReport": {
     "message": "Error sending report"
-  },
-
-  "issueLabelDesktopNotMobile": {
-    "message": "Desktop site instead of mobile site"
   },
   "issueLabelSiteUnusable": {
     "message": "Site is not usable"
@@ -78,71 +62,44 @@
   "issueLabelOther": {
     "message": "Something else"
   },
-
-  "labelLearnMore": {
-    "message": "Learn More"
-  },
   "labelNeverShowAgain": {
     "message": "Don't show this again"
   },
-
   "placeholderIssueType": {
-    "message": "Type of issue"
+    "message": "Category of the issue"
   },
-  "placeholderDescription": {
-    "message": "Description"
+  "placeholderPerformanceDescription": {
+    "message": "Optional comment"
   },
-
-  "titleInitialPromptBasic": {
+  "titleInitialPromptIntroduction": {
+    "message": "How is your experience with this site in Firefox?"
+  },
+  "titleInitialPromptIntroductionSentiment": {
     "message": "Are you satisfied with how this website works in Firefox?"
   },
-  "textInitialPromptBasic": {
+  "textInitialPromptIntroduction": {
     "message": "Help us make the web better for everyone."
   },
-  "titleInitialPromptFriendly": {
-    "message": "Firefox wants to know: are you satisfied with the way this website is working?"
+  "promptWorks": {
+    "message": "All is fine"
   },
-  "textInitialPromptFriendly": {
-    "message": "Help us to better detect issues with the web."
+  "promptSlow": {
+    "message": "It's slow"
+  },
+  "promptBroken": {
+    "message": "I'm having problems"
+  },
+  "privacyPolicy": {
+    "message": "Sending feedback will submit this domain to Mozilla. Your data will be handled in accordance with Mozilla's privacy policy."
   },
   "linkInitialPrompt": {
     "message": "Why am I seeing this?"
   },
-
-  "titleThankYou": {
-    "message": "Thank you!"
-  },
-
   "titleThankYouFeedback": {
-    "message": "Thank you. Your feedback helps us make Firefox—and the web—better."
+    "message": "Thank you for your feedback!"
   },
-  "textThankYouFeedback": {
-    "message": "If you experience problems again, you can report them by selecting the broken page icon from the address bar."
-  },
-
-  "titleFeedbackForm": {
-    "message": "Share Your Feedback"
-  },
-  "textFeedbackForm": {
-    "message": "Please tell us more about your experience on this site so we can understand and fix the issue."
-  },
-
-  "titleFeedbackDetails": {
-    "message": "Feedback details"
-  },
-  "textFeedbackDetails": {
-    "message": "This data is non-public. Only certain Mozilla employees will have access to this data."
-  },
-  "linkShowFeedbackDetails": {
-    "message": "See what data I am sending"
-  },
-
-  "textScreenshotOfIssue": {
-    "message": "Screenshot of Issue:"
-  },
-
   "screenshotInstructions": {
-    "message": "Drag or click on the page to select a region. Press ESC to cancel."
+    "message": "Provide us with a screenshot to help us understand the problem better. Drag or click on page to select a region."
   },
   "saveScreenshotSelectedArea": {
     "message": "OK"
@@ -156,13 +113,34 @@
   "cancelScreenshot": {
     "message": "Cancel"
   },
-  "MyShotsLink": {
-    "message": "unused"
+  "performancePromptIntroduction": {
+    "message": "What is the problem?"
   },
-  "CopyScreenshot": {
-    "message": "unused"
+  "performancePromptText": {
+    "message": "Is the page too slower than expected? Or is it something else?"
   },
-  "DownloadScreenshot": {
-    "message": "unused"
+  "promptPerformanceIssue": {
+    "message": "It's Slow"
+  },
+  "promptPerformanceOther": {
+    "message": "Something else"
+  },
+  "performanceFeedbackIntroduction": {
+    "message": "You said its slow"
+  },
+  "performanceFeedbackText": {
+    "message": "Any comments on that? If not, just press submit."
+  },
+  "takeScreenshot": {
+    "message": "Capture screen"
+  },
+  "issueDescriptionLabel": {
+    "message": "Issue description"
+  },
+  "placeholderIssueDescription": {
+    "message": "Description"
+  },
+  "problemReportTitle": {
+    "message": "Problem report"
   }
 }

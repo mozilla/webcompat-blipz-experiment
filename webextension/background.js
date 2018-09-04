@@ -17,7 +17,7 @@ const Config = (function() {
     "reportEndpoint", "variation", "firstRunTimestamp"
   ]);
 
-  const UIVariants = ["more-context", "little-context", "no-context"];
+  const UIVariants = ["little-sentiment", "more-sentiment"];
 
   class Config {
     constructor() {
@@ -624,7 +624,11 @@ const TabState = (function() {
     }
 
     reset() {
-      this._slide = "initialPrompt";
+      const initialPrompt = {
+        "little-sentiment": "initialPrompt",
+        "more-sentiment": "initialPromptSentiment"
+      };
+      this._slide = initialPrompt[Config.uiVariant];
       this._blipz_session_id = Date.now().toString();
       this.takenPageActionExit = undefined;
       this.updateReport();
@@ -732,9 +736,8 @@ const TabState = (function() {
     }
 
     _backgroundSendReport(data) {
-      data.type = browser.i18n.getMessage(`issueLabel${data.type}`);
 
-      const body = ["url", "type", "appVersion", "channel", "platform", "buildID",
+      const body = ["url", "appVersion", "channel", "platform", "buildID",
                     "experimentBranch", "description"].map(function(name) {
           const label = browser.i18n.getMessage(`detailLabel_${name}`);
           const value = data[name] || "";
@@ -745,7 +748,7 @@ const TabState = (function() {
       const domain = Config.findDomainMatch(host) || host;
 
       const report = {
-        title: `${domain} - ${data.type}`,
+        title: `${domain}`,
         body,
         labels: [`variant-${data.experimentBranch}`],
       };
@@ -1062,6 +1065,7 @@ async function onMessageFromScreenshots({name, args}) {
       tabState.updateReport({screenshot});
       tabState.maybeUpdatePageAction(["screenshot"]);
       unhideRealScreenshotsUI(tabState.tabId);
+      tabState.slide = "problemReport";
       await popupPageAction(tabState.tabId);
       break;
     }
@@ -1205,53 +1209,78 @@ function hidePageActionOnEveryTab() {
 }
 
 async function handleButtonClick(command, tabState) {
+
+  function handleCancelAction() {
+    if (command === "cancel") {
+      closePageAction();
+      tabState.reset();
+      tabState.markAsVerified();
+      tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
+    }
+  }
+
   switch (tabState.slide) {
+    case "initialPromptSentiment":
     case "initialPrompt": {
       const siteWorks = command === "yes";
+      const siteSlow = command === "slow";
+
       tabState.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
       if (siteWorks) {
-        tabState.slide = "thankYou";
+        tabState.slide = "thankYouFeedback";
         tabState.markAsVerified();
-      } else {
-        tabState.slide = "feedbackForm";
+      } else if (siteSlow) {
+        tabState.slide = "performanceFeedback";
+      } else if (Config.uiVariant === "little-sentiment") {
+        tabState.slide = "promptScreenshot";
+      } else if (Config.uiVariant === "more-sentiment") {
+        tabState.slide = "performancePrompt";
       }
+      handleCancelAction();
       break;
     }
-    case "feedbackForm": {
-      if (command === "submit") {
+    case "performancePrompt": {
+      const isPerformanceIssue = command === "performanceIssue";
+      if (isPerformanceIssue) {
+        tabState.slide = "performanceFeedback";
+      } else if (command === "back") {
+        if (Config.uiVariant === "little-sentiment") {
+          tabState.slide = "initialPrompt";
+        } else if (Config.uiVariant === "more-sentiment") {
+          tabState.slide = "initialPromptSentiment";
+        }
+      }
+      handleCancelAction();
+      break;
+    }
+    case "performanceFeedback": {
+      if (command === "submitPerformanceFeedback") {
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
         tabState.markAsVerified();
-      } else if (command === "showFeedbackDetails") {
-        tabState.slide = "feedbackDetails";
-        tabState.maybeUpdatePageAction(["type", "description"]);
       } else if (command === "back") {
-        tabState.slide = "initialPrompt";
-      } else if (command === "cancel") {
-        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
-        closePageAction();
-        tabState.reset();
-        tabState.markAsVerified();
+        if (Config.uiVariant === "more-sentiment") {
+          tabState.slide = "performancePrompt";
+        } else {
+          tabState.slide = "initialPrompt";
+        }
       }
+      handleCancelAction();
       break;
     }
-    case "feedbackDetails": {
-      if (command === "submit") {
+    case "problemReport": {
+      if (command === "submitProblemReport") {
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
         tabState.markAsVerified();
       } else if (command === "back") {
-        tabState.slide = "feedbackForm";
-      } else if (command === "cancel") {
-        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
-        closePageAction();
-        tabState.reset();
-        tabState.markAsVerified();
+        if (Config.uiVariant === "more-sentiment") {
+          tabState.slide = "performancePrompt";
+        } else {
+          tabState.slide = "initialPrompt";
+        }
       }
-      break;
-    }
-    case "thankYou": {
-      closePageAction();
+      handleCancelAction();
       break;
     }
     case "thankYouFeedback": {

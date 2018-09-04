@@ -298,13 +298,15 @@ this.ui = (function() { // eslint-disable-line no-unused-vars
                        <div class="face"></div>
                      </div>
                      <div class="preview-instructions" data-l10n-id="screenshotInstructions"></div>
-                     <button class="cancel-shot">${browser.i18n.getMessage("cancelScreenshot")}</button>
+                     <div>
+                       <button class="visible" data-l10n-id="saveScreenshotVisibleArea"></button>
+                       <button class="cancel-shot">${browser.i18n.getMessage("cancelScreenshot")}</button>
+                     </div>
                      <div class="myshots-all-buttons-container">
                        ${isDownloadOnly() ? "" : `
                          <button class="myshots-button" tabindex="3" data-l10n-id="myShotsLink"></button>
                          <div class="spacer"></div>
                        `}
-                       <button class="visible" tabindex="2" data-l10n-id="saveScreenshotVisibleArea"></button>
                        <button class="full-page" tabindex="1" data-l10n-id="saveScreenshotFullPage"></button>
                      </div>
                    </div>

@@ -9,8 +9,6 @@
 const gState = {};
 
 const gIssueTypeLabels = {
-  "": "placeholderIssueType",
-  "desktopNotMobile": "issueLabelDesktopNotMobile",
   "siteUnusable": "issueLabelSiteUnusable",
   "brokenDesign": "issueLabelBrokenDesign",
   "playbackFailure": "issueLabelPlaybackFailure",
@@ -46,37 +44,35 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", handleClick);
 
   for (const [selector, msg] of Object.entries({
-    "#initialPrompt > h1.no-context": "titleInitialPromptBasic",
-    "#initialPrompt > p.no-context": "textInitialPromptBasic",
-    "#initialPrompt > h1.little-context": "titleInitialPromptFriendly",
-    "#initialPrompt > p.little-context": "textInitialPromptFriendly",
-    "#initialPrompt > h1.more-context": "titleInitialPromptFriendly",
-    "#initialPrompt > p.more-context": "textInitialPromptFriendly",
+    "#initialPrompt > h1.introduction": "titleInitialPromptIntroduction",
+    "#initialPrompt > p.introduction": "textInitialPromptIntroduction",
     "#initialPrompt > a": "linkInitialPrompt",
     "#initialPrompt > label": "labelNeverShowAgain",
-    "#thankYou > h1": "titleThankYou",
-    "#thankYouFeedback > h1": "titleThankYouFeedback",
-    "#thankYouFeedback > p": "textThankYouFeedback",
-    "#thankYouFeedback > a": "labelLearnMore",
-    ".screenshot > p": "textScreenshotOfIssue",
-    "#feedbackForm > h2": "titleFeedbackForm",
-    "#feedbackForm > p": "textFeedbackForm",
-    "#feedbackForm > a": "linkShowFeedbackDetails",
-    "#feedbackDetails > h2": "titleFeedbackDetails",
-    "#feedbackDetails > p": "textFeedbackDetails",
-    "[data-detail='url'] > th": "detailLabel_url",
-    "[data-detail='type'] > th": "detailLabel_type",
-    "[data-detail='description'] > th": "detailLabel_description",
-    "[data-detail='channel'] > th": "detailLabel_channel",
-    "[data-detail='appVersion'] > th": "detailLabel_appVersion",
-    "[data-detail='platform'] > th": "detailLabel_platform",
-    "[data-detail='buildID'] > th": "detailLabel_buildID",
-    "[data-detail='uiVariant'] > th": "detailLabel_experimentBranch",
+    "#initialPrompt > div > button.siteWorks": "promptWorks",
+    "#initialPrompt > div> button.siteBroken": "promptBroken",
+    "#initialPrompt > div > button.siteSlow": "promptSlow",
+    "#initialPrompt > p.privacyPolicy": "privacyPolicy",
+    "#initialPromptSentiment > h1.introduction": "titleInitialPromptIntroductionSentiment",
+    "#initialPromptSentiment > p.introduction": "textInitialPromptIntroduction",
+    "#initialPromptSentiment > a": "linkInitialPrompt",
+    "#initialPromptSentiment > label": "labelNeverShowAgain",
+    "#initialPromptSentiment > div > button.siteWorks": "promptWorks",
+    "#initialPromptSentiment > div > button.siteBroken": "promptBroken",
+    "#initialPromptSentiment > p.privacyPolicy": "privacyPolicy",
+    "#thankYouFeedback > span": "titleThankYouFeedback",
     "button[data-action='ok']": "buttonOK",
-    "button[data-action='yes']": "buttonYes",
-    "button[data-action='no']": "buttonNo",
-    "button[data-action='submit']": "buttonSubmit",
+    "button[data-action='submitPerformanceFeedback']": "buttonSubmit",
+    "button[data-action='submitProblemReport']": "buttonSubmit",
     "button[data-action='cancel']": "buttonCancel",
+    "#performancePrompt > h2": "performancePromptIntroduction",
+    "#performancePrompt > p": "performancePromptText",
+    "#performancePrompt > div > button.performanceIssue": "promptPerformanceIssue",
+    "#performancePrompt > div > button.siteBroken": "promptPerformanceOther",
+    "#performanceFeedback > h2.introduction": "performanceFeedbackIntroduction",
+    "#performanceFeedback > p": "performanceFeedbackText",
+    "#problemReport > h2": "problemReportTitle",
+    "#problemReport > form > label": "issueDescriptionLabel",
+    "#problemReport > form > span": "placeholderIssueType",
   })) {
     const txt = browser.i18n.getMessage(msg);
     for (const node of document.querySelectorAll(selector)) {
@@ -85,13 +81,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   for (const [value, msgId] of Object.entries(gIssueTypeLabels)) {
-    document.querySelector(`option[value="${value}"]`).innerText =
+    const input = document.querySelector(`input[value="${value}"]`);
+    document.querySelector(`label[for="${input.id}"]`).innerText =
       browser.i18n.getMessage(msgId);
   }
 
   for (const [name, msgId] of Object.entries({
-    "type": "placeholderIssueType",
-    "description": "placeholderDescription",
+    "problemDescription": "placeholderIssueDescription",
+    "performanceDescription": "placeholderPerformanceDescription"
   })) {
     const input = document.querySelector(`[name=${name}]`);
     input.placeholder = browser.i18n.getMessage(msgId);
@@ -114,8 +111,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  autosizeTextArea(document.querySelector("[name=description]"));
-  autosizeTextArea(document.querySelector("[data-detail=description]"));
+  autosizeTextArea(document.querySelector("[name=performanceDescription]"));
+  autosizeTextArea(document.querySelector("[name=problemDescription]"));
 });
 
 function autosizeTextArea(el) {
@@ -156,6 +153,7 @@ function onMessage(update) {
   Object.assign(gState, update);
 
   if (update.slide) {
+    const body = document.querySelector("body");
     document.documentElement.setAttribute("data-slide", update.slide);
     for (const section of document.querySelectorAll("section")) {
       if (section.id !== update.slide) {
@@ -163,12 +161,11 @@ function onMessage(update) {
       } else {
         section.classList.add("active");
       }
-    }
-  }
-
-  for (const name of ["type", "description"]) {
-    if (gState[name]) {
-      document.querySelector(`[name=${name}]`).value = gState[name];
+      if (update.slide === "thankYouFeedback") {
+        body.classList.add("thankYou");
+      } else {
+        body.classList.remove("thankYou");
+      }
     }
   }
 
@@ -178,28 +175,8 @@ function onMessage(update) {
     hideScreenshot();
   }
 
-  if (gState.slide === "feedbackDetails") {
-    const elem = document.querySelector("#feedbackDetails");
-
-    // Update each of the values in the table to match
-    // what we will send if "submit" is clicked now.
-    elem.querySelectorAll("[data-detail]").forEach(tr => {
-      const detail = tr.getAttribute("data-detail");
-      if (gState[detail]) {
-        tr.style.display = "";
-        let value = gState[detail];
-        if (detail === "type") {
-          value = browser.i18n.getMessage(gIssueTypeLabels[value]);
-        }
-        tr.querySelector("td").innerText = value;
-      } else {
-        tr.style.display = "none";
-      }
-    });
-  }
-
-  autosizeTextArea(document.querySelector("[name=description]"));
-  autosizeTextArea(document.querySelector("[data-detail=description]"));
+  autosizeTextArea(document.querySelector("[name=performanceDescription]"));
+  autosizeTextArea(document.querySelector("[name=problemDescription]"));
 }
 
 async function hideScreenshot() {
@@ -251,7 +228,8 @@ function handleClick(e) {
     return;
   }
 
-  if (e.target.matches(".takeScreenshot")) {
+  if (e.target.matches(".requestScreenshot")) {
+    e.preventDefault();
     portToBGScript.send({command: "loadScreenshotUI"});
     return;
   }
@@ -260,8 +238,13 @@ function handleClick(e) {
   if (action) {
     e.preventDefault();
     const message = {command: action};
-    if (action === "submit" || action === "showFeedbackDetails") {
-      const form = document.querySelector("form");
+    const forms = {
+      "submitPerformanceFeedback": "performanceForm",
+      "submitProblemReport": "problemReportForm",
+    };
+    if (Object.keys(forms).includes(action)) {
+      const elem_id = forms[action];
+      const form = document.querySelector(`#${elem_id}`);
       if (!form.checkValidity()) {
         // force the first invalid element to be highlighted.
         form.querySelector(":invalid").value = "";
@@ -270,6 +253,12 @@ function handleClick(e) {
       for (const field of form.querySelectorAll("[name]")) {
         message[field.name] = field.value;
       }
+      const feedbackCategories = [];
+      for (const field of form.querySelectorAll("div > input:checked")) {
+        feedbackCategories.push(field.value);
+      }
+      message.feedbackCategories = feedbackCategories;
+      gState.feedbackCategories = feedbackCategories;
     }
     portToBGScript.send(message);
   }
