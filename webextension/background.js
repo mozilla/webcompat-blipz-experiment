@@ -740,7 +740,7 @@ const TabState = (function() {
 
       if (Config.testingMode) {
         console.info("Would submit this report: ", report);
-        return Promise.resolve();
+        report.labels.push("testing");
       }
 
       const fd = new FormData();
