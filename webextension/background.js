@@ -1147,10 +1147,10 @@ async function handleButtonClick(command, tabState) {
       } else if (command === "back") {
         tabState.slide = "initialPrompt";
       } else if (command === "cancel") {
+        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
         closePageAction();
         tabState.reset();
         tabState.markAsVerified();
-        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
       }
       break;
     }
@@ -1162,10 +1162,10 @@ async function handleButtonClick(command, tabState) {
       } else if (command === "back") {
         tabState.slide = "feedbackForm";
       } else if (command === "cancel") {
+        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
         closePageAction();
         tabState.reset();
         tabState.markAsVerified();
-        tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
       }
       break;
     }
