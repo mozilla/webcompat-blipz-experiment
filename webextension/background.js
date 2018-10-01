@@ -4,7 +4,7 @@
 
 "use strict";
 
-/* globals browser, VisitTimeTracker */
+/* globals browser, selectorLoader, VisitTimeTracker */
 
 browser.experiments.pageAction.concealFromPanel();
 
@@ -525,21 +525,25 @@ function yesOrNo(bool) {
   return bool ? "yes" : "no";
 }
 
-const portToPageAction = (function() {
+function createPortListener(opts) {
   let port;
 
   browser.runtime.onConnect.addListener(_port => {
-    // When the page action popup is shown.
-    port = _port;
-    port.onMessage.addListener(onMessageFromPageAction);
-    port.onDisconnect.addListener(function() {
-      // When the page action popup is hidden.
-      port = undefined;
+    if (_port.name !== opts.name) {
+      return;
+    }
 
-      // Update the page action icon for whichever tab we're on now.
-      TabState.get().then(tabState => {
-        updatePageActionIcon(tabState.tabId);
-      });
+    // When the port is opened.
+    port = _port;
+    if (opts.onMessage) {
+      port.onMessage.addListener(opts.onMessage);
+    }
+    port.onDisconnect.addListener(function() {
+      // When the port is closed.
+      port = undefined;
+      if (opts.onDisconnect) {
+        opts.onDisconnect();
+      }
     });
 
     TabState.get().then(tabState => {
@@ -554,7 +558,7 @@ const portToPageAction = (function() {
     if (Config.testingMode) {
       console.trace();
     }
-    return Promise.reject("Page action is disconnected");
+    return Promise.reject(`${opts.name} disconnected`);
   }
 
   function isConnected() {
@@ -562,7 +566,23 @@ const portToPageAction = (function() {
   }
 
   return {send, isConnected};
-}());
+}
+
+const portToPageAction = createPortListener({
+  name: "pageActionPopupPort",
+  onMessage: onMessageFromPageAction,
+  onDisconnect: () => {
+    // Update the page action icon for whichever tab we're on now.
+    TabState.get().then(tabState => {
+      updatePageActionIcon(tabState.tabId);
+    });
+  },
+});
+
+const portToScreenshots = createPortListener({
+  name: "screenshotsPort",
+  onMessage: onMessageFromScreenshots,
+});
 
 const TabState = (function() {
   const TabStates = {};
@@ -859,7 +879,7 @@ async function handleTabChange(tabId, url) {
 
   await updatePageActionIcon(tabId);
 
-  if (Config.lastPromptTime) {
+  if (Config.lastPromptTime && !tabState.isTakingScreenshot) {
     await browser.pageAction.show(tabId);
   }
 
@@ -897,7 +917,10 @@ async function onNavigationCommitted(navDetails) {
   if (Config.lastPromptTime &&
       Config.isPromptableURL(url)) {
     updatePageActionIcon(tabId);
-    await browser.pageAction.show(tabId);
+    const tabState = await TabState.get(tabId);
+    if (!tabState.isTakingScreenshot) {
+      await browser.pageAction.show(tabId);
+    }
   }
 }
 
@@ -994,6 +1017,57 @@ async function promptUser(tabId, url) {
   Config.onUserPrompted(url);
 }
 
+function hideRealScreenshotsUI(tabId) {
+  browser.tabs.executeScript(tabId, {
+    runAt: "document_start",
+    code: `(function() {
+      const screenshots = document.querySelector("#firefox-screenshots-preselection-iframe");
+      if (screenshots) {
+        screenshots.style.display = "none";
+        screenshots.id = "old-firefox-screenshots-preselection-iframe";
+      }
+    })()`
+  });
+}
+
+function unhideRealScreenshotsUI(tabId) {
+  browser.tabs.executeScript(tabId, {
+    runAt: "document_start",
+    code: `(function() {
+      const screenshots = document.querySelector("#old-firefox-screenshots-preselection-iframe");
+      if (screenshots) {
+        screenshots.style.display = "";
+        screenshots.id = "firefox-screenshots-preselection-iframe";
+      }
+    })()`
+  });
+}
+
+async function onMessageFromScreenshots({name, args}) {
+  const tabState = await TabState.get();
+  if (!tabState || !gCurrentlyPromptingTab ||
+      gCurrentlyPromptingTab.id !== tabState.tabId) {
+    return;
+  }
+
+  switch (name) {
+    case "closeSelector": {
+      await popupPageAction(tabState.tabId);
+      tabState.maybeUpdatePageAction();
+      unhideRealScreenshotsUI(tabState.tabId);
+      break;
+    }
+    case "takeShot": {
+      const screenshot = Object.values(args[0].shot.clips)[0].image.url;
+      tabState.updateReport({screenshot});
+      tabState.maybeUpdatePageAction(["screenshot"]);
+      unhideRealScreenshotsUI(tabState.tabId);
+      await popupPageAction(tabState.tabId);
+      break;
+    }
+  }
+}
+
 async function onMessageFromPageAction(message) {
   const { tabId, command, exit } = message;
 
@@ -1045,6 +1119,13 @@ async function onMessageFromPageAction(message) {
           });
         });
       }
+      break;
+    }
+    case "loadScreenshotUI": {
+      hideRealScreenshotsUI(tabId);
+      closePageAction();
+      selectorLoader.loadModules(); // active the screenshots UI
+      tabState.isTakingScreenshot = true;
       break;
     }
     case "requestScreenshot": {
@@ -1194,6 +1275,11 @@ function getActiveTab() {
 }
 
 async function popupPageAction(tabId) {
+  const tabState = await TabState.get(tabId);
+  if (tabState.isTakingScreenshot) {
+    tabState.isTakingScreenshot = false;
+    selectorLoader.unloadIfLoaded(tabId);
+  }
   return browser.experiments.pageAction.forceOpenPopup();
 }
 

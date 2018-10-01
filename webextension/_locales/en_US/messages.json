@@ -139,5 +139,30 @@
 
   "textScreenshotOfIssue": {
     "message": "Screenshot of Issue:"
+  },
+
+  "screenshotInstructions": {
+    "message": "Drag or click on the page to select a region. Press ESC to cancel."
+  },
+  "saveScreenshotSelectedArea": {
+    "message": "OK"
+  },
+  "saveScreenshotVisibleArea": {
+    "message": "Select visible area"
+  },
+  "saveScreenshotFullPage": {
+    "message": "Select full page"
+  },
+  "cancelScreenshot": {
+    "message": "Cancel"
+  },
+  "MyShotsLink": {
+    "message": "unused"
+  },
+  "CopyScreenshot": {
+    "message": "unused"
+  },
+  "DownloadScreenshot": {
+    "message": "unused"
   }
 }

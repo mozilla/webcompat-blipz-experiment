@@ -252,8 +252,7 @@ function handleClick(e) {
   }
 
   if (e.target.matches(".takeScreenshot")) {
-    e.preventDefault();
-    portToBGScript.send({command: "requestScreenshot"});
+    portToBGScript.send({command: "loadScreenshotUI"});
     return;
   }
 
