@@ -62,6 +62,7 @@
   "background": {
     "scripts": [
       "visitTimeTracker.js",
+      "screenshotsLoader.js",
       "background.js"
     ]
   },
@@ -77,5 +78,16 @@
     "default_icon": "icons/broken_page.svg",
     "default_title": "__MSG_addonName__",
     "default_popup": "popup.html"
-  }
+  },
+  "web_accessible_resources": [
+    "___screenshots-related-resources___",
+    "blank.html",
+    "icons/cancel.svg",
+    "icons/cloud.svg",
+    "icons/copy.svg",
+    "icons/download.svg",
+    "icons/menu-fullpage.svg",
+    "icons/menu-visible.svg",
+    "icons/icon-welcome-face-without-eyes.svg"
+  ]
 }
