@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "#performanceFeedback > h2.introduction": "performanceFeedbackIntroduction",
     "#performanceFeedback > p": "performanceFeedbackText",
     "#problemReport > h2": "problemReportTitle",
+    "#problemReport > .missingScreenshot > button": "takeAScreenshot",
     "#problemReport > form > label": "issueDescriptionLabel",
     "#problemReport > form > span": "placeholderIssueType",
   })) {
@@ -180,7 +181,7 @@ function onMessage(update) {
 }
 
 async function hideScreenshot() {
-  document.querySelectorAll(".takeScreenshot").forEach(elem => {
+  document.querySelectorAll(".missingScreenshot").forEach(elem => {
     elem.style.display = "";
   });
   document.querySelectorAll(".screenshot").forEach(elem => {
@@ -193,7 +194,7 @@ async function hideScreenshot() {
 }
 
 function showScreenshot(dataUrl) {
-  document.querySelectorAll(".takeScreenshot").forEach(elem => {
+  document.querySelectorAll(".missingScreenshot").forEach(elem => {
     elem.style.display = "none";
   });
   document.querySelectorAll(".screenshot").forEach(elem => {

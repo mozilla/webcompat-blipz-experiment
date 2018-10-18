@@ -1057,7 +1057,8 @@ async function onMessageFromScreenshots({name, args}) {
     case "closeSelector": {
       await popupPageAction(tabState.tabId);
       tabState.maybeUpdatePageAction();
-      unhideRealScreenshotsUI(tabState.tabId);
+      hideRealScreenshotsUI(tabState.tabId);
+      tabState.slide = "problemReport";
       break;
     }
     case "takeShot": {

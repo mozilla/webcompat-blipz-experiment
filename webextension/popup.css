@@ -24,7 +24,7 @@ input[type="button"],
 button,
 select,
 textarea {
-  border-radius: 3px;
+  border-radius: 4px;
   border: 1px solid #e1e1e1;
   width: 100%;
   background: #f1f1f1;
@@ -143,7 +143,7 @@ section > button {
 }
 section > * + button,
 section > * + button + button {
-  margin-top: 0.75em;
+  margin-top: 8px;
 }
 section > h2 > button {
   position: absolute;
@@ -161,16 +161,21 @@ section > h2 > button {
 section > button + button {
   border-left: 1px solid #e1e1e1;
 }
+section > div > * + button {
+  margin-top: 8px;
+}
 section > h1 + button,
 section > h1 + button + button {
   margin-top: 1em;
+}
+section > div > * + button + button {
+  margin-top: 8px;
 }
 button.emphasize,
 button:active {
   color: #fff;
   background-color: #0260de;
 }
-
 .takeScreenshot,
 .screenshot {
   display: block;
@@ -244,10 +249,6 @@ section > p {
   color: #737373;
 }
 
-#initialPrompt > div > button {
-  margin-bottom: 0.5em;
-}
-
 form > div > input {
   vertical-align: bottom;
 }
@@ -271,6 +272,7 @@ form > div > label {
   background-size: 24px 24px;
   width: 24px;
   height: 24px;
+  margin-right: 5px;
 }
 
 .positiveSentiment::before {
@@ -281,6 +283,7 @@ form > div > label {
   width: 24px;
   height: 24px;
   vertical-align: middle;
+  margin-right: 5px;
 }
 
 div.screenshot {
@@ -301,4 +304,82 @@ div.screenshot {
 #thankYouFeedback > span {
   font-size: 1.1rem;
   font-weight: 400;
+}
+
+#initialPrompt > p,
+#initialPromptSentiment > p {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+#initialPrompt button.siteWorks::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/check.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#initialPrompt button.siteSlow::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/performance.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#initialPrompt button.siteBroken::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/alert-circle.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#performancePrompt button.performanceIssue::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/performance.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#performancePrompt button.siteBroken::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/alert-circle.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#problemReport button.requestScreenshot::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/screenshot.svg);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
 }

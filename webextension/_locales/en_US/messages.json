@@ -134,6 +134,9 @@
   "takeScreenshot": {
     "message": "Capture screen"
   },
+  "takeAScreenshot": {
+    "message": "Take a screenshot"
+  },
   "issueDescriptionLabel": {
     "message": "Issue description"
   },
