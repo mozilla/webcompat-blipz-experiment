@@ -647,7 +647,7 @@ window.inlineSelectionCss = `
   width: 400px;
   user-select: none; }
 
-.cancel-shot {
+.cancel-shot, .visible {
   background-color: transparent;
   cursor: pointer;
   outline: none;

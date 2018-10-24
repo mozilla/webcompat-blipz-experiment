@@ -9,8 +9,10 @@
 }
 body {
   background-color: #fff;
-  min-width: 36em;
   max-width: 36em;
+}
+body.thankYou {
+  background-color: #0060df;
 }
 input,
 label,
@@ -22,7 +24,7 @@ input[type="button"],
 button,
 select,
 textarea {
-  border-radius: 3px;
+  border-radius: 4px;
   border: 1px solid #e1e1e1;
   width: 100%;
   background: #f1f1f1;
@@ -55,6 +57,7 @@ section {
   background-position: 24px 1.5em;
   background-repeat: no-repeat;
   background-size: 32px 32px;
+  min-width: 36em;
 }
 section:not(.active) {
   display: none;
@@ -140,7 +143,7 @@ section > button {
 }
 section > * + button,
 section > * + button + button {
-  margin-top: 0.75em;
+  margin-top: 8px;
 }
 section > h2 > button {
   position: absolute;
@@ -158,31 +161,21 @@ section > h2 > button {
 section > button + button {
   border-left: 1px solid #e1e1e1;
 }
+section > div > * + button {
+  margin-top: 8px;
+}
 section > h1 + button,
 section > h1 + button + button {
   margin-top: 1em;
+}
+section > div > * + button + button {
+  margin-top: 8px;
 }
 button.emphasize,
 button:active {
   color: #fff;
   background-color: #0260de;
 }
-#thankYou > h1 {
-  margin-top: 1.75em;
-}
-#thankYouFeedback > a {
-  float: right;
-  margin-top: 1.5em;
-  margin-bottom: 1em;
-}
-#feedbackForm select,
-#feedbackForm textarea {
-  margin-bottom: 0.5em;
-}
-#feedbackForm > label {
-  margin-bottom: 0;
-}
-
 .takeScreenshot,
 .screenshot {
   display: block;
@@ -198,8 +191,6 @@ button:active {
   cursor: pointer;
   display: none;
   margin-left: 0.5em;
-  max-width: 50%;
-  max-height: 8em;
   border: 1px solid #eee;
   border-radius: 4px;
 }
@@ -225,41 +216,26 @@ section > button:only-of-type {
 section > h1 + button:only-of-type {
   margin-top: 2.5em;
 }
-#thankYou,
-#thankYouFeedback {
-  background-image: url(icons/done.svg);
-}
-#initialPrompt {
-  background-image: url(icons/broken_page.svg);
+.initial {
+  background-image: url(icons/notification.svg);
 }
 button[data-action="back"] {
   background-image: url(icons/back.svg);
   background-size: 12px 12px;
 }
 
+section > p {
+  margin-top: 0.75em;
+}
+
 #feedbackDetails .screenshot {
   margin-top: 1em;
 }
 #feedbackDetails p {
-  margin-top: 1em;
   margin-bottom: 1em;
 }
 
-.no-context #initialPrompt a,
-.no-context #thankYou p,
-.no-context #thankYouFeedback p,
-.no-context #thankYouFeedback a,
-.little-context #thankYouFeedback p,
-.little-context #thankYouFeedback a {
-  display: none;
-}
-
-html.no-context .little-context,
-html.no-context .more-context,
-html.little-context .no-context,
-html.little-context .more-context,
-html.more-context .no-context,
-html.more-context .little-context {
+#initialPrompt a {
   display: none;
 }
 
@@ -267,4 +243,143 @@ html.more-context .little-context {
   content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/screenshot.svg) no-repeat;
   padding-left: 24px;
+}
+
+.secondary {
+  color: #737373;
+}
+
+form > div > input {
+  vertical-align: bottom;
+}
+
+form > div > label {
+  vertical-align: top;
+}
+
+.negativeSentiment,
+.positiveSentiment {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.negativeSentiment::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/u1F629-weary.svg);
+  background-size: 24px 24px;
+  width: 24px;
+  height: 24px;
+  margin-right: 5px;
+}
+
+.positiveSentiment::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/u1F600-grin.svg);
+  background-size: 24px 24px;
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+div.screenshot {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+#thankYouFeedback {
+  background-color: #0060df;
+  border-color: #0060df;
+  color: #fff;
+  padding: 6px 10px;
+  min-width: 0;
+}
+
+#thankYouFeedback > span {
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+#initialPrompt > p,
+#initialPromptSentiment > p {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+#initialPrompt button.siteWorks::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/check.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#initialPrompt button.siteSlow::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/performance.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#initialPrompt button.siteBroken::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/alert-circle.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#performancePrompt button.performanceIssue::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/performance.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#performancePrompt button.siteBroken::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/alert-circle.png);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#problemReport button.requestScreenshot::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/screenshot.svg);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
 }

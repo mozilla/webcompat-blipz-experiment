@@ -10,77 +10,92 @@
     <script src="popup.js"></script>
   </head>
   <body>
-    <section id="initialPrompt">
-      <h1 class="no-context"></h1>
-      <p class="no-context"></p>
-      <h1 class="little-context"></h1>
-      <p class="little-context"></p>
-      <h1 class="more-context"></h1>
-      <p class="more-context"></p>
-      <a data-exit="why" href="https://webcompat.mozilla.community/better"></a>
-      <label>
-        <input type="checkbox" name="neverShowAgain" />
-      </label>
-      <button data-action="no"></button>
-      <button data-action="yes" class="emphasize"></button>
-    </section>
-    <section id="thankYou">
-      <h1></h1>
-      <button data-action="ok"></button>
-    </section>
-    <section id="thankYouFeedback">
-      <h1></h1>
-      <p></p>
-      <a data-exit="learnMore" href="https://webcompat.mozilla.community/thanks"></a>
-      <button data-action="ok"></button>
-    </section>
-    <section id="feedbackForm">
-      <h2>
-        <button data-action="back"></button>
-      </h2>
-      <p></p>
-      <form>
-        <select name="type" required>
-          <option value="" hidden></option>
-          <option value="desktopNotMobile"></option>
-          <option value="siteUnusable"></option>
-          <option value="brokenDesign"></option>
-          <option value="playbackFailure"></option>
-          <option value="other"></option>
-        </select>
-        <button class="takeScreenshot"></button>
-        <div class="screenshot">
-          <p></p>
-          <img data-exit="screenshot" src="screenshot.jpg" alt="" />
-          <button></button>
-        </div>
-        <textarea name="description" rows="1"></textarea>
-      </form>
-      <a href="#" role="button" data-action="showFeedbackDetails"></a>
-      <button data-action="cancel"></button>
-      <button data-action="submit" class="emphasize"></button>
-    </section>
-    <section id="feedbackDetails">
-      <h2>
-        <button data-action="back"></button>
-      </h2>
-      <table>
-        <tr data-detail="url"><th></th><td></td></tr>
-        <tr data-detail="type"><th></th><td></td></tr>
-        <tr data-detail="description"><th></th><td></td></tr>
-        <tr data-detail="channel"><th></th><td></td></tr>
-        <tr data-detail="appVersion"><th></th><td></td></tr>
-        <tr data-detail="platform"><th></th><td></td></tr>
-        <tr data-detail="buildID"><th></th><td></td></tr>
-        <tr data-detail="uiVariant"><th></th><td></td></tr>
-      </table>
-      <div class="screenshot">
-        <p></p>
-        <img data-exit="screenshot" src="screenshot.jpg" alt="" />
+    <section id="initialPrompt" class="initial">
+      <span class="cancel" data-action="cancel"></span>
+      <h1 class="introduction"></h1>
+      <p class="introduction"></p>
+      <div>
+        <button data-action="yes" class="siteWorks"></button>
+        <button data-action="slow" class="siteSlow"></button>
+        <button data-action="no" class="siteBroken requestScreenshot"></button>
       </div>
-      <p></p>
+      <p class="privacyPolicy secondary"></p>
+      <label>
+          <input type="checkbox" name="neverShowAgain" />
+      </label>
       <button data-action="cancel"></button>
-      <button data-action="submit" class="emphasize"></button>
+    </section>
+    <section id="initialPromptSentiment" class="initial">
+      <h1 class="introduction"></h1>
+      <p class="introduction"></p>
+      <div>
+        <button data-action="yes" class="siteWorks positiveSentiment"></button>
+        <button data-action="no" class="siteBroken negativeSentiment"></button>
+      </div>
+      <p class="privacyPolicy secondary"></p>
+      <label>
+          <input type="checkbox" name="neverShowAgain" />
+      </label>
+      <button data-action="cancel"></button>
+    </section>
+    <section id="thankYouFeedback" data-action="ok">
+      <span data-action="ok"></span>
+    </section>
+    <section id="performancePrompt">
+      <h2>
+        <button data-action="back"></button>
+      </h2>
+      <p></p>
+      <div>
+        <button data-action="performanceIssue" class="performanceIssue"></button>
+        <button class="siteBroken requestScreenshot"></button>
+      </div>
+      <button data-action="cancel"></button>
+    </section>
+    <section id="performanceFeedback">
+      <h2 class="introduction">
+        <button data-action="back"></button>
+      </h2>
+      <p></p>
+      <form id="performanceForm">
+        <textarea name="performanceDescription"></textarea>
+      </form>
+      <button data-action="cancel"></button>
+      <button data-action="submitPerformanceFeedback" class="emphasize"></button>
+    </section>
+    <section id="problemReport">
+      <h2 class="introduction">
+        <button data-action="back"></button>
+      </h2>
+      <div class="missingScreenshot">
+        <button class="requestScreenshot"></button>
+      </div>
+      <div class="screenshot">
+        <img src="screenshot.jpg" alt="" />
+      </div>
+      <form id="problemReportForm">
+        <label for="problemDescription"></label>
+        <textarea id="problemDescription" name="problemDescription"></textarea>
+        <span></span>
+        <div>
+          <input id="feedbackTypeSiteUnusable" type="checkbox" value="siteUnusable" />
+          <label for="feedbackTypeSiteUnusable"></label>
+        </div>
+        <div>
+          <input id="feedbackTypeBrokenDesign" type="checkbox" value="brokenDesign" />
+          <label for="feedbackTypeBrokenDesign"></label>
+        </div>
+        <div>
+          <input id="feedbackTypePlaybackFailure" type="checkbox" value="playbackFailure" />
+          <label for="feedbackTypePlaybackFailure"></label>
+        </div>
+        <div>
+          <input id="feedbackTypeOther" type="checkbox" value="other" />
+          <label for="feedbackTypeOther"></label>
+        </div>
+      </form>
+      <button data-action="cancel"></button>
+      <button data-action="submitProblemReport" class="emphasize"></button>
     </section>
   </body>
 </html>
