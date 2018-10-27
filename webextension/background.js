@@ -134,6 +134,8 @@ const Config = (function() {
       }
 
       if (!isResetRequest) {
+        // At least reset all tabs to their initial slide, since different variants may not have the same slides.
+        TabState.resetAllToInitialSlide();
         return;
       }
 
@@ -596,7 +598,10 @@ const TabState = (function() {
 
     async maybeUpdatePageAction(onlyProperties) {
       if (portToPageAction.isConnected() && ((await getActiveTab()) || {}).id === this._tabId) {
+        const host = new URL(this._report.url).host;
+        const domain = Config.findDomainMatch(host) || host;
         const info = Object.assign({}, this._report, {
+          domain,
           tabId: this._tabId,
           slide: this._slide,
           uiVariant: Config.uiVariant,
@@ -736,9 +741,8 @@ const TabState = (function() {
     }
 
     _backgroundSendReport(data) {
-
       const body = ["url", "appVersion", "channel", "platform", "buildID",
-                    "experimentBranch", "description"].map(function(name) {
+                    "experimentBranch", "description", "type"].map(function(name) {
           const label = browser.i18n.getMessage(`detailLabel_${name}`);
           const value = data[name] || "";
           return `**${label}** ${value}`;
@@ -752,6 +756,10 @@ const TabState = (function() {
         body,
         labels: [`variant-${data.experimentBranch}`],
       };
+
+      if (data.description === "Site is slow") {
+        report.labels.push("slow-site");
+      }
 
       if (data.userPrompted) {
         report.labels.push("user-prompted");
@@ -822,6 +830,12 @@ const TabState = (function() {
 
     static reset(tabId) {
       delete TabStates[tabId];
+    }
+
+    static resetAllToInitialSlide() {
+      for (const tab of Object.values(TabStates)) {
+        tab.reset();
+      }
     }
 
     static async get(tabId) {
@@ -1058,7 +1072,6 @@ async function onMessageFromScreenshots({name, args}) {
       await popupPageAction(tabState.tabId);
       tabState.maybeUpdatePageAction();
       hideRealScreenshotsUI(tabState.tabId);
-      tabState.slide = "problemReport";
       break;
     }
     case "takeShot": {
@@ -1066,11 +1079,17 @@ async function onMessageFromScreenshots({name, args}) {
       tabState.updateReport({screenshot});
       tabState.maybeUpdatePageAction(["screenshot"]);
       unhideRealScreenshotsUI(tabState.tabId);
-      tabState.slide = "problemReport";
       await popupPageAction(tabState.tabId);
       break;
     }
   }
+}
+
+function loadScreenshotUI(tabId, tabState) {
+  hideRealScreenshotsUI(tabId);
+  closePageAction();
+  selectorLoader.loadModules(); // activate the screenshots UI
+  tabState.isTakingScreenshot = true;
 }
 
 async function onMessageFromPageAction(message) {
@@ -1126,21 +1145,10 @@ async function onMessageFromPageAction(message) {
       }
       break;
     }
-    case "loadScreenshotUI": {
-      hideRealScreenshotsUI(tabId);
-      closePageAction();
-      selectorLoader.loadModules(); // active the screenshots UI
-      tabState.isTakingScreenshot = true;
+    case "takeScreenshot":
+    case "retakeScreenshot": {
+      loadScreenshotUI(tabId, tabState);
       break;
-    }
-    case "requestScreenshot": {
-      browser.tabs.captureTab(tabId, Config.screenshotFormat).then(screenshot => {
-        tabState.updateReport({screenshot});
-        tabState.maybeUpdatePageAction(["screenshot"]);
-      }).catch(error => {
-        console.error(browser.i18n.getMessage("errorScreenshotFail"), error);
-      });
-      return true;
     }
     default: {
       handleButtonClick(command, tabState);
@@ -1214,9 +1222,8 @@ async function handleButtonClick(command, tabState) {
   function handleCancelAction() {
     if (command === "cancel") {
       closePageAction();
-      tabState.reset();
-      tabState.markAsVerified();
       tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
+      tabState.reset();
     }
   }
 
@@ -1225,25 +1232,27 @@ async function handleButtonClick(command, tabState) {
     case "initialPrompt": {
       const siteWorks = command === "yes";
       const siteSlow = command === "slow";
-
-      tabState.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
+      tabState.maybeSendTelemetry({satisfiedSitePrompt: siteSlow ? "slow" : yesOrNo(siteWorks)});
       if (siteWorks) {
         tabState.slide = "thankYouFeedback";
         tabState.markAsVerified();
       } else if (siteSlow) {
         tabState.slide = "performanceFeedback";
       } else if (Config.uiVariant === "little-sentiment") {
-        tabState.slide = "promptScreenshot";
-      } else if (Config.uiVariant === "more-sentiment") {
         tabState.slide = "performancePrompt";
+      } else if (Config.uiVariant === "more-sentiment") {
+        tabState.slide = "problemReport";
       }
       handleCancelAction();
       break;
     }
     case "performancePrompt": {
       const isPerformanceIssue = command === "performanceIssue";
+      const isSomethingElse = command === "somethingElse";
       if (isPerformanceIssue) {
         tabState.slide = "performanceFeedback";
+      } else if (isSomethingElse) {
+        tabState.slide = "problemReport";
       } else if (command === "back") {
         if (Config.uiVariant === "little-sentiment") {
           tabState.slide = "initialPrompt";
@@ -1256,14 +1265,15 @@ async function handleButtonClick(command, tabState) {
     }
     case "performanceFeedback": {
       if (command === "submitPerformanceFeedback") {
+        tabState.updateReport({description: "Site is slow"});
         tabState.submitReport();
         tabState.slide = "thankYouFeedback";
         tabState.markAsVerified();
       } else if (command === "back") {
         if (Config.uiVariant === "more-sentiment") {
-          tabState.slide = "performancePrompt";
+          tabState.slide = "initialPromptSentiment";
         } else {
-          tabState.slide = "initialPrompt";
+          tabState.slide = "performancePrompt";
         }
       }
       handleCancelAction();
@@ -1276,9 +1286,9 @@ async function handleButtonClick(command, tabState) {
         tabState.markAsVerified();
       } else if (command === "back") {
         if (Config.uiVariant === "more-sentiment") {
-          tabState.slide = "performancePrompt";
+          tabState.slide = "initialPromptSentiment";
         } else {
-          tabState.slide = "initialPrompt";
+          tabState.slide = "performancePrompt";
         }
       }
       handleCancelAction();
@@ -1293,8 +1303,8 @@ async function handleButtonClick(command, tabState) {
 
 async function updatePageActionIcon(tabId) {
   const active = (gCurrentlyPromptingTab || {}).id === tabId;
-  const path = active ? "icons/broken_page_active.svg"
-                      : "icons/broken_page.svg";
+  const path = active ? "icons/notification.svg"
+                      : "icons/notification.svg";
   await browser.pageAction.setIcon({tabId, path});
 }
 

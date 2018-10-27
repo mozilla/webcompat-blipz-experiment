@@ -31,6 +31,11 @@ textarea {
   padding: 0 0.5em;
   height: 2.5em;
 }
+button {
+  border: 0;
+  background: #ddd;
+  text-align: center;
+}
 input[type="button"],
 button,
 select {
@@ -49,9 +54,6 @@ textarea,
 input[type="button"],
 textarea {
   background: #fff;
-}
-button {
-  text-align: center;
 }
 section {
   background-position: 24px 1.5em;
@@ -76,6 +78,9 @@ section > h2 {
   margin-bottom: 1.25em;
   border-bottom: 1px solid #e1e1e1;
 }
+section > p {
+  margin-top: 0.75em;
+}
 section > a,
 section > p,
 section > h1,
@@ -83,8 +88,8 @@ section > div,
 section > form,
 section > label,
 section > table {
-  margin-left: 75px;
-  margin-right: 45px;
+  margin-left: 15px;
+  margin-right: 15px;
 }
 section > label {
   display: flex;
@@ -145,6 +150,10 @@ section > * + button,
 section > * + button + button {
   margin-top: 8px;
 }
+section > h2 + p {
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
 section > h2 > button {
   position: absolute;
   top: 0;
@@ -171,43 +180,88 @@ section > h1 + button + button {
 section > div > * + button + button {
   margin-top: 8px;
 }
+form > div > input {
+  vertical-align: bottom;
+}
+
+form > div > label {
+  vertical-align: top;
+}
+section.initial > a,
+section.initial > p,
+section.initial > h1,
+section.initial > div,
+section.initial > form,
+section.initial > label,
+section.initial > table {
+  margin-left: 75px;
+  margin-right: 45px;
+}
 button.emphasize,
 button:active {
   color: #fff;
   background-color: #0260de;
 }
-.takeScreenshot,
+.missingScreenshot,
 .screenshot {
-  display: block;
+  background-color: #d8d8d8;
+  text-align: center;
+  margin: 0;
+  margin-top: -1.25em;
+  height: 160px;
+  position: relative;
 }
-.screenshot {
-  padding-right: 16px;
+.missingScreenshot {
+  display: flex;
+  align-items: end;
+  background-color: #f6f6f6;
 }
-.screenshot > * {
-  vertical-align: top;
+.screenshot > .imagecenterhelper {
   display: inline-block;
+  height: 100%;
+  vertical-align: middle;
 }
 .screenshot > img {
+  max-height: 100%;
+  vertical-align: middle;
   cursor: pointer;
-  display: none;
-  margin-left: 0.5em;
-  border: 1px solid #eee;
-  border-radius: 4px;
+  display: inline-block;
 }
-.screenshot > button {
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  margin-left: -22px;
-  margin-top: -10px;
-  background-color: #fff;
+.screenshot > .buttonbar {
+  position: absolute;
+  top: 100%;
+  align-self: center;
+  visibility: hidden;
+  width: 100%;
+  margin-top: -3.5em;
+}
+.missingScreenshot > .buttonbar,
+.screenshot > .buttonbar {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+}
+.missingScreenshot > .buttonbar {
+  width: 100%;
+  position: relative;
+}
+.screenshot:hover {
+  background-color: #f2f2f2;
+}
+.screenshot:hover > img {
+  opacity: 0.2;
+}
+.screenshot:hover > .buttonbar {
+  visibility: visible;
+}
+.buttonbar > button {
+  width: auto;
+  height: 2.5em;
+  display: inline-block;
+  text-indent: 2em;
   background-repeat: no-repeat;
-  background-position: 50% 50%;
-  background-size: 12px 12px;
-  background-image: url(icons/remove.svg);
-  border: 1px solid #e1e1e1;
-  border-radius: 15px;
-  box-shadow: 0 2px 2px rgba(128, 128, 128, 0.2);
+  background-size: 1.5em 1.5em;
+  background-position: 0.5em 50%;
 }
 section > button:only-of-type {
   margin-top: 0.75em;
@@ -216,16 +270,43 @@ section > button:only-of-type {
 section > h1 + button:only-of-type {
   margin-top: 2.5em;
 }
+.missingScreenshot > .buttonbar > button {
+  width: 100%;
+  margin: 1em;
+  text-indent: 0;
+}
+[data-action="retakeScreenshot"] {
+  background-image: url(icons/screenshot.svg);
+}
+[data-action="takeScreenshot"]::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/screenshot.svg);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+[data-action="removeScreenshot"] {
+  background-image: url(icons/delete.svg);
+  background-color: #ff0039;
+  width: 2.5em !important;
+}
+.buttonbar > button:empty {
+  text-indent: 0;
+  background-position: 50% 50%;
+}
+.buttonbar > button:not(:last-child) {
+  margin-right: 10px;
+}
 .initial {
   background-image: url(icons/notification.svg);
 }
 button[data-action="back"] {
   background-image: url(icons/back.svg);
   background-size: 12px 12px;
-}
-
-section > p {
-  margin-top: 0.75em;
 }
 
 #feedbackDetails .screenshot {
@@ -249,61 +330,47 @@ section > p {
   color: #737373;
 }
 
-form > div > input {
-  vertical-align: bottom;
-}
-
-form > div > label {
-  vertical-align: top;
-}
-
+.slowSentiment,
 .negativeSentiment,
 .positiveSentiment {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  border-width: 8px;
+  border-left-style: solid;
 }
 
-.negativeSentiment::before {
-  content: ' ';
-  display: inline-block;
-  background-image: url(icons/u1F629-weary.svg);
-  background-size: 24px 24px;
-  width: 24px;
-  height: 24px;
-  margin-right: 5px;
+.positiveSentiment {
+  border-left-color: #12bc00;
 }
 
-.positiveSentiment::before {
-  content: ' ';
-  display: inline-block;
-  background-image: url(icons/u1F600-grin.svg);
-  background-size: 24px 24px;
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-  margin-right: 5px;
+.slowSentiment {
+  border-left-color: #ffa800;
 }
 
-div.screenshot {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
+.negativeSentiment {
+  border-left-color: #ff4f5e;
 }
 
 #thankYouFeedback {
   background-color: #0060df;
   border-color: #0060df;
   color: #fff;
-  padding: 6px 10px;
   min-width: 0;
+  padding: 0;
 }
 
 #thankYouFeedback > span {
-  font-size: 1.1rem;
+  display: block;
+  font-size: 1.05rem;
   font-weight: 400;
+  padding: 0.75em 1em;
+  text-indent: 1.1em;
+  background-image: url(icons/check-white.svg);
+  background-position: 0.5em 50%;
+  background-repeat: no-repeat;
+  background-size: 1.2em;
 }
 
 #initialPrompt > p,
@@ -312,34 +379,60 @@ div.screenshot {
   margin-bottom: 12px;
 }
 
+#performanceFeedback > button,
+#performancePrompt > button {
+  margin-top: 1.5em;
+}
+
 #initialPrompt button.siteWorks::before {
   content: ' ';
   display: inline-block;
-  background-image: url(icons/check.png);
-  background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
-  vertical-align: middle;
-  padding-right: 8px;
-}
-
-#initialPrompt button.siteSlow::before {
-  content: ' ';
-  display: inline-block;
-  background-image: url(icons/performance.png);
-  background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
-  vertical-align: middle;
-  padding-right: 8px;
+  background-image: url(icons/u1F600-grin.svg);
+  background-size: 24px 24px;
+  width: 24px;
+  height: 24px;
+  margin-right: 5px;
 }
 
 #initialPrompt button.siteBroken::before {
   content: ' ';
   display: inline-block;
-  background-image: url(icons/alert-circle.png);
+  background-image: url(icons/u1F629-weary.svg);
+  background-size: 24px 24px;
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+#initialPromptSentiment button.siteWorks::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/check.svg);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#initialPromptSentiment button.siteSlow::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/performance.svg);
+  background-repeat: no-repeat;
+  background-size: 17px 17px;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  padding-right: 8px;
+}
+
+#initialPromptSentiment button.siteBroken::before {
+  content: ' ';
+  display: inline-block;
+  background-image: url(icons/alert-circle.svg);
   background-repeat: no-repeat;
   background-size: 17px 17px;
   width: 17px;
@@ -351,7 +444,7 @@ div.screenshot {
 #performancePrompt button.performanceIssue::before {
   content: ' ';
   display: inline-block;
-  background-image: url(icons/performance.png);
+  background-image: url(icons/performance.svg);
   background-repeat: no-repeat;
   background-size: 17px 17px;
   width: 17px;
@@ -363,7 +456,7 @@ div.screenshot {
 #performancePrompt button.siteBroken::before {
   content: ' ';
   display: inline-block;
-  background-image: url(icons/alert-circle.png);
+  background-image: url(icons/alert-circle.svg);
   background-repeat: no-repeat;
   background-size: 17px 17px;
   width: 17px;
@@ -372,14 +465,8 @@ div.screenshot {
   padding-right: 8px;
 }
 
-#problemReport button.requestScreenshot::before {
-  content: ' ';
-  display: inline-block;
-  background-image: url(icons/screenshot.svg);
-  background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
-  vertical-align: middle;
-  padding-right: 8px;
+#performanceFeedback > h2,
+#performancePrompt > h2,
+#problemReport > h2 {
+  text-indent: -2.5em;
 }

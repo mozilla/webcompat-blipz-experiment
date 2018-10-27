@@ -46,11 +46,11 @@
     }
   },
   "icons": {
-    "16": "icons/broken_page.svg",
-    "32": "icons/broken_page.svg",
-    "48": "icons/broken_page.svg",
-    "96": "icons/broken_page.svg",
-    "128": "icons/broken_page.svg"
+    "16": "icons/notification.svg",
+    "32": "icons/notification.svg",
+    "48": "icons/notification.svg",
+    "96": "icons/notification.svg",
+    "128": "icons/notification.svg"
   },
   "permissions": [
     "alarms",

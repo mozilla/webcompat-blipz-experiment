@@ -60,13 +60,13 @@
     "message": "Video or audio doesn't play"
   },
   "issueLabelOther": {
-    "message": "Something else"
+    "message": "Something Else"
   },
   "labelNeverShowAgain": {
     "message": "Don't show this again"
   },
   "placeholderIssueType": {
-    "message": "Category of the issue"
+    "message": "Category of the issue:"
   },
   "placeholderPerformanceDescription": {
     "message": "Optional comment"
@@ -75,22 +75,28 @@
     "message": "How is your experience with this site in Firefox?"
   },
   "titleInitialPromptIntroductionSentiment": {
-    "message": "Are you satisfied with how this website works in Firefox?"
+    "message": "Are you satisfied with how <website> works in Firefox?"
   },
   "textInitialPromptIntroduction": {
     "message": "Help us make the web better for everyone."
   },
   "promptWorks": {
-    "message": "All is fine"
+    "message": "All is Fine"
   },
   "promptSlow": {
-    "message": "It's slow"
+    "message": "It's Slow"
   },
   "promptBroken": {
-    "message": "I'm having problems"
+    "message": "I'm Having Problems"
   },
   "privacyPolicy": {
-    "message": "Sending feedback will submit this domain to Mozilla. Your data will be handled in accordance with Mozilla's privacy policy."
+    "message": "Sending feedback will submit this domain to Mozilla. Your data will be handled in accordance with <PrivacyPolicyLink>."
+  },
+  "privacyPolicyLinkText": {
+    "message": "Mozilla's Privacy Policy."
+  },
+  "privacyPolicyLink": {
+    "message": "https://www.mozilla.org/privacy/"
   },
   "linkInitialPrompt": {
     "message": "Why am I seeing this?"
@@ -105,19 +111,19 @@
     "message": "OK"
   },
   "saveScreenshotVisibleArea": {
-    "message": "Select visible area"
+    "message": "Save visible area"
   },
   "saveScreenshotFullPage": {
     "message": "Select full page"
   },
   "cancelScreenshot": {
-    "message": "Cancel"
+    "message": "Skip"
   },
   "performancePromptIntroduction": {
     "message": "What is the problem?"
   },
   "performancePromptText": {
-    "message": "Is the page too slower than expected? Or is it something else?"
+    "message": "Is the page slower than expected? Or is it something else?"
   },
   "promptPerformanceIssue": {
     "message": "It's Slow"
@@ -126,7 +132,7 @@
     "message": "Something else"
   },
   "performanceFeedbackIntroduction": {
-    "message": "You said its slow"
+    "message": "You said it's slow"
   },
   "performanceFeedbackText": {
     "message": "Any comments on that? If not, just press submit."
@@ -137,8 +143,11 @@
   "takeAScreenshot": {
     "message": "Take a screenshot"
   },
+  "retakeScreenshot": {
+    "message": "Retake screenshot"
+  },
   "issueDescriptionLabel": {
-    "message": "Issue description"
+    "message": "Issue description:"
   },
   "placeholderIssueDescription": {
     "message": "Description"

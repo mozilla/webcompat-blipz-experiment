@@ -51,14 +51,13 @@ document.addEventListener("DOMContentLoaded", () => {
     "#initialPrompt > div > button.siteWorks": "promptWorks",
     "#initialPrompt > div> button.siteBroken": "promptBroken",
     "#initialPrompt > div > button.siteSlow": "promptSlow",
-    "#initialPrompt > p.privacyPolicy": "privacyPolicy",
     "#initialPromptSentiment > h1.introduction": "titleInitialPromptIntroductionSentiment",
     "#initialPromptSentiment > p.introduction": "textInitialPromptIntroduction",
     "#initialPromptSentiment > a": "linkInitialPrompt",
     "#initialPromptSentiment > label": "labelNeverShowAgain",
     "#initialPromptSentiment > div > button.siteWorks": "promptWorks",
     "#initialPromptSentiment > div > button.siteBroken": "promptBroken",
-    "#initialPromptSentiment > p.privacyPolicy": "privacyPolicy",
+    "#initialPromptSentiment > div > button.siteSlow": "promptSlow",
     "#thankYouFeedback > span": "titleThankYouFeedback",
     "button[data-action='ok']": "buttonOK",
     "button[data-action='submitPerformanceFeedback']": "buttonSubmit",
@@ -71,13 +70,33 @@ document.addEventListener("DOMContentLoaded", () => {
     "#performanceFeedback > h2.introduction": "performanceFeedbackIntroduction",
     "#performanceFeedback > p": "performanceFeedbackText",
     "#problemReport > h2": "problemReportTitle",
-    "#problemReport > .missingScreenshot > button": "takeAScreenshot",
+    "button[data-action='takeScreenshot']": "takeAScreenshot",
+    "button[data-action='retakeScreenshot']": "retakeScreenshot",
     "#problemReport > form > label": "issueDescriptionLabel",
     "#problemReport > form > span": "placeholderIssueType",
   })) {
     const txt = browser.i18n.getMessage(msg);
     for (const node of document.querySelectorAll(selector)) {
       node.appendChild(document.createTextNode(txt));
+    }
+  }
+
+  // text needing to linkify the privacy policy
+  const link = document.createElement("a");
+  link.href = browser.i18n.getMessage("privacyPolicyLink");
+  link.innerText = browser.i18n.getMessage("privacyPolicyLinkText");
+  for (const [selector, msg] of Object.entries({
+    "#initialPrompt > p.privacyPolicy": "privacyPolicy",
+    "#initialPromptSentiment > p.privacyPolicy": "privacyPolicy",
+  })) {
+    const split = browser.i18n.getMessage(msg).split("<PrivacyPolicyLink>");
+    for (const node of document.querySelectorAll(selector)) {
+      split.forEach((txt, index) => {
+        if (index > 0) {
+          node.appendChild(link.cloneNode(true));
+        }
+        node.appendChild(document.createTextNode(txt));
+      });
     }
   }
 
@@ -88,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   for (const [name, msgId] of Object.entries({
-    "problemDescription": "placeholderIssueDescription",
+    "description": "placeholderIssueDescription",
     "performanceDescription": "placeholderPerformanceDescription"
   })) {
     const input = document.querySelector(`[name=${name}]`);
@@ -102,6 +121,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  document.querySelector("#problemReportForm").addEventListener("change", e => {
+    const input = e.target;
+    if (input.name === "type") {
+      const message = {};
+      message.type = gState.type = input.value;
+      portToBGScript.send(message);
+    }
+  });
+
   for (const name of ["neverShowAgain"]) {
     const input = document.querySelector(`[name="${name}"]`);
 
@@ -113,13 +141,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   autosizeTextArea(document.querySelector("[name=performanceDescription]"));
-  autosizeTextArea(document.querySelector("[name=problemDescription]"));
+  autosizeTextArea(document.querySelector("[name=description]"));
 });
 
 function autosizeTextArea(el) {
   function resize() {
     el.style.height = "auto";
-    el.style.padding = "0";
     const popup = document.scrollingElement;
     const popupKidHeights = Array.map.call(null, popup.childNodes, n => n.clientHeight);
     const heightOfRest = popupKidHeights.reduce((a, c) => a + (c || 0), 0) - el.clientHeight;
@@ -151,6 +178,16 @@ function onMessage(update) {
     document.documentElement.classList.add(update.uiVariant);
   }
 
+  if (update.domain) {
+    const toReplace = new RegExp(gState.domain || "<website>", "g");
+    for (const selector of ["#initialPromptSentiment > h1"]) {
+      const elem = document.querySelector(selector);
+      if (elem) {
+        elem.innerText = elem.innerText.replace(toReplace, update.domain);
+      }
+    }
+  }
+
   Object.assign(gState, update);
 
   if (update.slide) {
@@ -168,6 +205,15 @@ function onMessage(update) {
         body.classList.remove("thankYou");
       }
     }
+
+    if (update.slide === "problemReport") {
+      if ("description" in update) {
+        document.querySelector(`#problemDescription`).value = update.description;
+      }
+      if ("type" in update) {
+        document.querySelector(`[value=${update.type}]`).checked = true;
+      }
+    }
   }
 
   if (gState.screenshot) {
@@ -177,7 +223,7 @@ function onMessage(update) {
   }
 
   autosizeTextArea(document.querySelector("[name=performanceDescription]"));
-  autosizeTextArea(document.querySelector("[name=problemDescription]"));
+  autosizeTextArea(document.querySelector("[name=description]"));
 }
 
 async function hideScreenshot() {
@@ -216,22 +262,9 @@ function handleClick(e) {
     portToBGScript.send({command: "leavingPageAction", exit});
   }
 
-  if (e.target.matches(".screenshot > button")) {
-    e.preventDefault();
-    hideScreenshot();
-    portToBGScript.send({command: "removeScreenshot"});
-    return;
-  }
-
   if (e.target.matches(".screenshot > img")) {
     e.preventDefault();
     portToBGScript.send({command: "showScreenshot"});
-    return;
-  }
-
-  if (e.target.matches(".requestScreenshot")) {
-    e.preventDefault();
-    portToBGScript.send({command: "loadScreenshotUI"});
     return;
   }
 
