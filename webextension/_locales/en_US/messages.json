@@ -93,7 +93,7 @@
     "message": "Sending feedback will submit this domain to Mozilla. Your data will be handled in accordance with <PrivacyPolicyLink>."
   },
   "privacyPolicyLinkText": {
-    "message": "Mozilla's Privacy Policy."
+    "message": "Mozilla's Privacy Policy"
   },
   "privacyPolicyLink": {
     "message": "https://www.mozilla.org/privacy/"
