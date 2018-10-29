@@ -316,10 +316,6 @@ button[data-action="back"] {
   margin-bottom: 1em;
 }
 
-#initialPrompt a {
-  display: none;
-}
-
 .takeScreenshot::before {
   content: "__MSG_buttonTakeScreenshot__";
   background: url(icons/screenshot.svg) no-repeat;
