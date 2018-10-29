@@ -17,7 +17,7 @@ const Config = (function() {
     "reportEndpoint", "variation", "firstRunTimestamp"
   ]);
 
-  const UIVariants = ["little-sentiment", "more-sentiment"];
+  const UIVariants = ["little-sentiment", "more-sentiment", "control"];
 
   class Config {
     constructor() {
@@ -880,6 +880,11 @@ async function onTabChanged(info) {
 }
 
 async function handleTabChange(tabId, url) {
+  // Don't do anything for the control experiment
+  if (Config._uiVariant === "control") {
+    return;
+  }
+
   cancelCurrentPromptDelay();
 
   if (!Config.isPromptableURL(url)) {
@@ -1330,6 +1335,11 @@ function closePageAction() {
 }
 
 browser.commands.onCommand.addListener(async command => {
+  // Don't do anything for the control experiment
+  if (Config._uiVariant === "control") {
+    return;
+  }
+
   if (command === "show-popup" && Config.testingMode) {
     cancelCurrentPromptDelay();
     const {id, url} = await getActiveTab();
