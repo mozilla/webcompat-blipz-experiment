@@ -154,5 +154,51 @@
   },
   "problemReportTitle": {
     "message": "Problem report"
+  },
+
+  "textInitialPromptV1": {
+    "message": "Help us to better detect issues with the web."
+  },
+  "titleInitialPromptV1": {
+    "message": "Firefox wants to know: are you satisfied with the way this website is working?"
+  },
+  "linkInitialPromptV1": {
+    "message": "Why am I seeing this?"
+  },
+  "buttonYes": {
+    "message": "Yes"
+  },
+  "buttonNo": {
+    "message": "No"
+  },
+  "titleThankYouV1": {
+    "message": "Thank you!"
+  },
+  "titleThankYouFeedbackV1": {
+    "message": "Thank you. Your feedback helps us make Firefox—and the web—better."
+  },
+  "textThankYouFeedbackV1": {
+    "message": "If you experience problems again, you can report them by selecting the broken page icon from the address bar."
+  },
+  "labelLearnMoreV1": {
+    "message": "Learn More"
+  },
+  "titleFeedbackFormV1": {
+    "message": "Share Your Feedback"
+  },
+  "textFeedbackFormV1": {
+    "message": "Please tell us more about your experience on this site so we can understand and fix the issue."
+  },
+  "titleFeedbackDetailsV1": {
+    "message": "Feedback details"
+  },
+  "textFeedbackDetailsV1": {
+    "message": "This data is non-public. Only certain Mozilla employees will have access to this data."
+  },
+  "linkShowFeedbackDetailsV1": {
+    "message": "See what data I am sending"
+  },
+  "placeholderIssueTypeV1": {
+    "message": "Select category of issue"
   }
 }

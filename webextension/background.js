@@ -17,7 +17,8 @@ const Config = (function() {
     "reportEndpoint", "variation", "firstRunTimestamp"
   ]);
 
-  const UIVariants = ["little-sentiment", "more-sentiment", "control"];
+  const UIVariants = ["little-sentiment", "more-sentiment",
+                      "control", "v1-more-context"];
 
   class Config {
     constructor() {
@@ -631,7 +632,8 @@ const TabState = (function() {
     reset() {
       const initialPrompt = {
         "little-sentiment": "initialPrompt",
-        "more-sentiment": "initialPromptSentiment"
+        "more-sentiment": "initialPromptSentiment",
+        "v1-more-context": "initialPromptV1",
       };
       this._slide = initialPrompt[Config.uiVariant];
       this._blipz_session_id = Date.now().toString();
@@ -709,7 +711,8 @@ const TabState = (function() {
     }
 
     isShowingThankYouPage() {
-      return ["thankYou", "thankYouFeedback"].includes(this._slide);
+      return ["thankYou", "thankYouFeedback",
+              "thankYouV1", "thankYouFeedbackV1"].includes(this._slide);
     }
 
     onPageActionShown() {
@@ -741,6 +744,8 @@ const TabState = (function() {
     }
 
     _backgroundSendReport(data) {
+      const typeLabel = browser.i18n.getMessage(`issueLabel${data.type}`);
+
       const body = ["url", "appVersion", "channel", "platform", "buildID",
                     "experimentBranch", "description", "type"].map(function(name) {
           const label = browser.i18n.getMessage(`detailLabel_${name}`);
@@ -752,7 +757,7 @@ const TabState = (function() {
       const domain = Config.findDomainMatch(host) || host;
 
       const report = {
-        title: `${domain}`,
+        title: `${domain} - ${typeLabel}`,
         body,
         labels: [`variant-${data.experimentBranch}`],
       };
@@ -1222,89 +1227,143 @@ function hidePageActionOnEveryTab() {
   });
 }
 
-async function handleButtonClick(command, tabState) {
-
-  function handleCancelAction() {
-    if (command === "cancel") {
-      closePageAction();
-      tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
-      tabState.reset();
-    }
-  }
-
-  switch (tabState.slide) {
-    case "initialPromptSentiment":
-    case "initialPrompt": {
-      const siteWorks = command === "yes";
-      const siteSlow = command === "slow";
-      tabState.maybeSendTelemetry({satisfiedSitePrompt: siteSlow ? "slow" : yesOrNo(siteWorks)});
-      if (siteWorks) {
-        tabState.slide = "thankYouFeedback";
-        tabState.markAsVerified();
-      } else if (siteSlow) {
-        tabState.slide = "performanceFeedback";
-      } else if (Config.uiVariant === "little-sentiment") {
-        tabState.slide = "performancePrompt";
-      } else if (Config.uiVariant === "more-sentiment") {
-        tabState.slide = "problemReport";
-      }
-      handleCancelAction();
-      break;
-    }
-    case "performancePrompt": {
-      const isPerformanceIssue = command === "performanceIssue";
-      const isSomethingElse = command === "somethingElse";
-      if (isPerformanceIssue) {
-        tabState.slide = "performanceFeedback";
-      } else if (isSomethingElse) {
-        tabState.slide = "problemReport";
-      } else if (command === "back") {
-        if (Config.uiVariant === "little-sentiment") {
-          tabState.slide = "initialPrompt";
-        } else if (Config.uiVariant === "more-sentiment") {
-          tabState.slide = "initialPromptSentiment";
-        }
-      }
-      handleCancelAction();
-      break;
-    }
-    case "performanceFeedback": {
-      if (command === "submitPerformanceFeedback") {
-        tabState.updateReport({description: "Site is slow"});
-        tabState.submitReport();
-        tabState.slide = "thankYouFeedback";
-        tabState.markAsVerified();
-      } else if (command === "back") {
-        if (Config.uiVariant === "more-sentiment") {
-          tabState.slide = "initialPromptSentiment";
-        } else {
-          tabState.slide = "performancePrompt";
-        }
-      }
-      handleCancelAction();
-      break;
-    }
-    case "problemReport": {
-      if (command === "submitProblemReport") {
-        tabState.submitReport();
-        tabState.slide = "thankYouFeedback";
-        tabState.markAsVerified();
-      } else if (command === "back") {
-        if (Config.uiVariant === "more-sentiment") {
-          tabState.slide = "initialPromptSentiment";
-        } else {
-          tabState.slide = "performancePrompt";
-        }
-      }
-      handleCancelAction();
-      break;
-    }
-    case "thankYouFeedback": {
-      closePageAction();
-      break;
-    }
+function handleCancelAction(command, tabState) {
+  if (command === "cancel") {
+    closePageAction();
+    tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
+    tabState.reset();
   }
 }
+
+const SlideButtonClickHandlers = {};
+
+async function handleButtonClick(command, tabState) {
+  const handler = SlideButtonClickHandlers[tabState.slide];
+  handler && handler(command, tabState);
+}
+
+SlideButtonClickHandlers.initialPrompt =
+SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
+  const siteWorks = command === "yes";
+  const siteSlow = command === "slow";
+  tabState.maybeSendTelemetry({satisfiedSitePrompt: siteSlow ? "slow" : yesOrNo(siteWorks)});
+  if (siteWorks) {
+    tabState.slide = "thankYouFeedback";
+    tabState.markAsVerified();
+  } else if (siteSlow) {
+    tabState.slide = "performanceFeedback";
+  } else if (Config.uiVariant === "little-sentiment") {
+    tabState.slide = "performancePrompt";
+  } else if (Config.uiVariant === "more-sentiment") {
+    tabState.slide = "problemReport";
+  }
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
+  const isPerformanceIssue = command === "performanceIssue";
+  const isSomethingElse = command === "somethingElse";
+  if (isPerformanceIssue) {
+    tabState.slide = "performanceFeedback";
+  } else if (isSomethingElse) {
+    tabState.slide = "problemReport";
+  } else if (command === "back") {
+    if (Config.uiVariant === "little-sentiment") {
+      tabState.slide = "initialPrompt";
+    } else if (Config.uiVariant === "more-sentiment") {
+      tabState.slide = "initialPromptSentiment";
+    }
+  }
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.performanceFeedback = (command, tabState) => {
+  if (command === "submitPerformanceFeedback") {
+    tabState.updateReport({description: "Site is slow"});
+    tabState.submitReport();
+    tabState.slide = "thankYouFeedback";
+    tabState.markAsVerified();
+  } else if (command === "back") {
+    if (Config.uiVariant === "more-sentiment") {
+      tabState.slide = "initialPromptSentiment";
+    } else {
+      tabState.slide = "performancePrompt";
+    }
+  }
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.problemReport = (command, tabState) => {
+  if (command === "submitProblemReport") {
+    tabState.submitReport();
+    tabState.slide = "thankYouFeedback";
+    tabState.markAsVerified();
+  } else if (command === "back") {
+    if (Config.uiVariant === "more-sentiment") {
+      tabState.slide = "initialPromptSentiment";
+    } else {
+      tabState.slide = "performancePrompt";
+    }
+  }
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.thankYouFeedback = (command, tabState) => {
+  closePageAction();
+};
+
+SlideButtonClickHandlers.initialPromptV1 = (command, tabState) => {
+  const siteWorks = command === "yes";
+  tabState.maybeSendTelemetry({satisfiedSitePrompt: yesOrNo(siteWorks)});
+  if (siteWorks) {
+    tabState.slide = "thankYouV1";
+    tabState.markAsVerified();
+  } else {
+    tabState.slide = "feedbackFormV1";
+  }
+};
+
+SlideButtonClickHandlers.thankYouV1 = (command, tabState) => {
+  closePageAction();
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.thankYouFeedbackV1 = (command, tabState) => {
+  closePageAction();
+};
+
+SlideButtonClickHandlers.feedbackFormV1 = (command, tabState) => {
+  if (command === "submitFeedbackV1") {
+    tabState.submitReport();
+    tabState.slide = "thankYouFeedbackV1";
+    tabState.markAsVerified();
+  } else if (command === "showFeedbackDetails") {
+    tabState.slide = "feedbackDetailsV1";
+    tabState.maybeUpdatePageAction(["type", "description"]);
+  } else if (command === "back") {
+    tabState.slide = "initialPromptV1";
+  } else if (command === "cancel") {
+    tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
+    closePageAction();
+    tabState.reset();
+    tabState.markAsVerified();
+  }
+};
+
+SlideButtonClickHandlers.feedbackDetailsV1 = (command, tabState) => {
+  if (command === "submitFeedbackV1") {
+    tabState.submitReport();
+    tabState.slide = "thankYouFeedbackV1";
+    tabState.markAsVerified();
+  } else if (command === "back") {
+    tabState.slide = "feedbackFormV1";
+  } else if (command === "cancel") {
+    tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
+    closePageAction();
+    tabState.reset();
+    tabState.markAsVerified();
+  }
+};
 
 async function updatePageActionIcon(tabId) {
   const active = (gCurrentlyPromptingTab || {}).id === tabId;
