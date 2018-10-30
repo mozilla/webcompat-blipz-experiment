@@ -222,6 +222,7 @@ button:active {
   vertical-align: middle;
 }
 .screenshot > img {
+  max-width: calc(100% - 15px); /* less the right margin */
   max-height: 100%;
   vertical-align: middle;
   display: inline-block;
