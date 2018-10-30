@@ -69,14 +69,14 @@
       </h2>
       <div class="missingScreenshot">
         <div class="buttonbar">
-          <button data-action="takeScreenshot"></button>
+          <button data-exit="takeScreenshot" data-action="takeScreenshot"></button>
         </div>
       </div>
       <div class="screenshot">
         <span class="imagecenterhelper"></span>
-        <img src="screenshot.jpg" alt="" />
+        <img data-exit="viewScreenshot" src="screenshot.jpg" alt="" />
         <div class="buttonbar">
-          <button data-action="retakeScreenshot"></button>
+          <button data-exit="retakeScreenshot" data-action="retakeScreenshot"></button>
           <button data-action="removeScreenshot"></button>
         </div>
       </div>
@@ -137,13 +137,13 @@
           <option value="other"></option>
         </select>
         <div class="missingScreenshot">
-          <button data-action="takeScreenshot"></button>
+          <button data-exit="takeScreenshot" data-action="takeScreenshot"></button>
         </div>
         <div class="screenshot">
           <span class="imagecenterhelper"></span>
-          <img src="screenshot.jpg" alt="" />
+          <img data-exit="viewScreenshot" src="screenshot.jpg" alt="" />
           <div class="buttonbar">
-            <button data-action="retakeScreenshot"></button>
+            <button data-exit="retakeScreenshot" data-action="retakeScreenshot"></button>
             <button data-action="removeScreenshot"></button>
           </div>
         </div>
@@ -169,7 +169,7 @@
       </table>
       <div class="screenshot viewOnly">
         <span class="imagecenterhelper"></span>
-        <img data-exit="screenshot" src="screenshot.jpg" alt="" />
+        <img src="screenshot.jpg" alt="" />
       </div>
       <p></p>
       <button data-action="cancel"></button>
