@@ -156,6 +156,16 @@
     "message": "Problem report"
   },
 
+  "myShotsLink": {
+    "message": ""
+  },
+  "copyScreenshot": {
+    "message": ""
+  },
+  "downloadScreenshot": {
+    "message": ""
+  },
+
   "textInitialPromptV1": {
     "message": "Help us to better detect issues with the web."
   },
