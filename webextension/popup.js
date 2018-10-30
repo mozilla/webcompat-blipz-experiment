@@ -74,6 +74,31 @@ document.addEventListener("DOMContentLoaded", () => {
     "button[data-action='retakeScreenshot']": "retakeScreenshot",
     "#problemReport > form > label": "issueDescriptionLabel",
     "#problemReport > form > span": "placeholderIssueType",
+
+    "#initialPromptV1 > h1": "titleInitialPromptV1",
+    "#initialPromptV1 > p": "textInitialPromptV1",
+    "#initialPromptV1 > a": "linkInitialPromptV1",
+    "#initialPromptV1 > label": "labelNeverShowAgain",
+    "#initialPromptV1 > button[data-action='yes']": "buttonYes",
+    "#initialPromptV1 > button[data-action='no']": "buttonNo",
+    "button[data-action='submitFeedbackV1']": "buttonSubmit",
+    "#thankYouV1 > h1": "titleThankYouV1",
+    "#thankYouFeedbackV1 > h1": "titleThankYouFeedbackV1",
+    "#thankYouFeedbackV1 > p": "textThankYouFeedbackV1",
+    "#thankYouFeedbackV1 > a": "labelLearnMoreV1",
+    "#feedbackFormV1 > h2": "titleFeedbackFormV1",
+    "#feedbackFormV1 > p": "textFeedbackFormV1",
+    "#feedbackFormV1 > a": "linkShowFeedbackDetailsV1",
+    "#feedbackDetailsV1 > h2": "titleFeedbackDetailsV1",
+    "#feedbackDetailsV1 > p": "textFeedbackDetailsV1",
+    "[data-detail='url'] > th": "detailLabel_url",
+    "[data-detail='type'] > th": "detailLabel_type",
+    "[data-detail='description'] > th": "detailLabel_description",
+    "[data-detail='channel'] > th": "detailLabel_channel",
+    "[data-detail='appVersion'] > th": "detailLabel_appVersion",
+    "[data-detail='platform'] > th": "detailLabel_platform",
+    "[data-detail='buildID'] > th": "detailLabel_buildID",
+    "[data-detail='uiVariant'] > th": "detailLabel_experimentBranch",
   })) {
     const txt = browser.i18n.getMessage(msg);
     for (const node of document.querySelectorAll(selector)) {
@@ -102,9 +127,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   for (const [value, msgId] of Object.entries(gIssueTypeLabels)) {
     const input = document.querySelector(`input[value="${value}"]`);
-    document.querySelector(`label[for="${input.id}"]`).innerText =
-      browser.i18n.getMessage(msgId);
+    const msg = browser.i18n.getMessage(msgId);
+    document.querySelector(`option[value="${value}"]`).innerText = msg; // v1
+    document.querySelector(`label[for="${input.id}"]`).innerText = msg; // v2
   }
+
+  document.querySelector(`option[value=""]`).innerText = // v1
+    browser.i18n.getMessage("placeholderIssueTypeV1");
 
   for (const [name, msgId] of Object.entries({
     "description": "placeholderIssueDescription",
@@ -131,17 +160,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   for (const name of ["neverShowAgain"]) {
-    const input = document.querySelector(`[name="${name}"]`);
-
-    input.addEventListener("change", e => {
-      const message = {};
-      message[input.name] = input.checked;
-      portToBGScript.send(message);
+    document.querySelectorAll(`[name="${name}"]`).forEach(input => {
+      input.addEventListener("change", e => {
+        const message = {};
+        message[input.name] = input.checked;
+        portToBGScript.send(message);
+      });
     });
   }
 
-  autosizeTextArea(document.querySelector("[name=performanceDescription]"));
-  autosizeTextArea(document.querySelector("[name=description]"));
+  document.querySelectorAll("[name=description], [data-detail=description]").forEach(ta => {
+    autosizeTextArea(ta);
+  });
 });
 
 function autosizeTextArea(el) {
@@ -208,10 +238,18 @@ function onMessage(update) {
 
     if (update.slide === "problemReport") {
       if ("description" in update) {
-        document.querySelector(`#problemDescription`).value = update.description;
+        document.querySelector(`#problemReport #problemDescription`).value = update.description;
       }
       if ("type" in update) {
-        document.querySelector(`[value=${update.type}]`).checked = true;
+        document.querySelector(`#problemReport [value=${update.type}]`).checked = true;
+      }
+    }
+    if (update.slide === "feedbackFormV1") {
+      if ("description" in update) {
+        document.querySelector(`#feedbackFormV1 textarea`).value = update.description;
+      }
+      if ("type" in update) {
+        document.querySelector(`#feedbackFormV1 select`).value = update.type;
       }
     }
   }
@@ -222,8 +260,28 @@ function onMessage(update) {
     hideScreenshot();
   }
 
-  autosizeTextArea(document.querySelector("[name=performanceDescription]"));
-  autosizeTextArea(document.querySelector("[name=description]"));
+  if (gState.slide === "feedbackDetailsV1") {
+    const elem = document.querySelector("#feedbackDetailsV1");
+    // Update each of the values in the table to match
+    // what we will send if "submit" is clicked now.
+    elem.querySelectorAll("[data-detail]").forEach(tr => {
+      const detail = tr.getAttribute("data-detail");
+      if (gState[detail]) {
+        tr.style.display = "";
+        let value = gState[detail];
+        if (detail === "type") {
+          value = browser.i18n.getMessage(gIssueTypeLabels[value]);
+        }
+        tr.querySelector("td").innerText = value;
+      } else {
+        tr.style.display = "none";
+      }
+    });
+  }
+
+  document.querySelectorAll("[name=description], [data-detail=description]").forEach(ta => {
+    autosizeTextArea(ta);
+  });
 }
 
 async function hideScreenshot() {
@@ -273,26 +331,31 @@ function handleClick(e) {
     e.preventDefault();
     const message = {command: action};
     const forms = {
-      "submitPerformanceFeedback": "performanceForm",
-      "submitProblemReport": "problemReportForm",
+      "submitPerformanceFeedback": "#performanceForm",
+      "submitProblemReport": "#problemReportForm",
+      "submitFeedbackV1": "#feedbackFormV1 > form",
+      "showFeedbackDetails": "#feedbackFormV1 > form",
+      "takeScreenshot": "#feedbackFormV1 > form",
     };
     if (Object.keys(forms).includes(action)) {
-      const elem_id = forms[action];
-      const form = document.querySelector(`#${elem_id}`);
-      if (!form.checkValidity()) {
-        // force the first invalid element to be highlighted.
-        form.querySelector(":invalid").value = "";
-        return;
+      const form = document.querySelector(forms[action]);
+      // if the form isn't on this slide, don't worry about it.
+      if (gState.slide === form.closest("section").id) {
+        if (!form.checkValidity()) {
+          // force the first invalid element to be highlighted.
+          form.querySelector(":invalid").value = "";
+          return;
+        }
+        for (const field of form.querySelectorAll("[name]")) {
+          message[field.name] = field.value;
+        }
+        const feedbackCategories = [];
+        for (const field of form.querySelectorAll("div > input:checked")) {
+          feedbackCategories.push(field.value);
+        }
+        message.feedbackCategories = feedbackCategories;
+        gState.feedbackCategories = feedbackCategories;
       }
-      for (const field of form.querySelectorAll("[name]")) {
-        message[field.name] = field.value;
-      }
-      const feedbackCategories = [];
-      for (const field of form.querySelectorAll("div > input:checked")) {
-        feedbackCategories.push(field.value);
-      }
-      message.feedbackCategories = feedbackCategories;
-      gState.feedbackCategories = feedbackCategories;
     }
     portToBGScript.send(message);
   }

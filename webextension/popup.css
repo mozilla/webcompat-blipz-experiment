@@ -187,13 +187,13 @@ form > div > input {
 form > div > label {
   vertical-align: top;
 }
-section.initial > a,
-section.initial > p,
-section.initial > h1,
-section.initial > div,
-section.initial > form,
-section.initial > label,
-section.initial > table {
+section.withIcon > a,
+section.withIcon > p,
+section.withIcon > h1,
+section.withIcon > div,
+section.withIcon > form,
+section.withIcon > label,
+section.withIcon > table {
   margin-left: 75px;
   margin-right: 45px;
 }
@@ -224,8 +224,10 @@ button:active {
 .screenshot > img {
   max-height: 100%;
   vertical-align: middle;
-  cursor: pointer;
   display: inline-block;
+}
+.screenshot:not(.viewOnly) > img {
+  cursor: pointer;
 }
 .screenshot > .buttonbar {
   position: absolute;
@@ -245,13 +247,13 @@ button:active {
   width: 100%;
   position: relative;
 }
-.screenshot:hover {
+.screenshot:not(.viewOnly):hover {
   background-color: #f2f2f2;
 }
-.screenshot:hover > img {
+.screenshot:not(.viewOnly):hover > img {
   opacity: 0.2;
 }
-.screenshot:hover > .buttonbar {
+.screenshot:not(.viewOnly):hover > .buttonbar {
   visibility: visible;
 }
 .buttonbar > button {
@@ -301,7 +303,7 @@ section > h1 + button:only-of-type {
 .buttonbar > button:not(:last-child) {
   margin-right: 10px;
 }
-.initial {
+.withIcon {
   background-image: url(icons/notification.svg);
 }
 button[data-action="back"] {
@@ -463,6 +465,64 @@ button[data-action="back"] {
 
 #performanceFeedback > h2,
 #performancePrompt > h2,
-#problemReport > h2 {
+#problemReport > h2,
+#feedbackFormV1 > h2,
+#feedbackDetailsV1 > h2 {
   text-indent: -2.5em;
+}
+
+/* v1 styles */
+#thankYouV1,
+#thankYouFeedbackV1 {
+  background-image: url(icons/done.svg);
+}
+#thankYouV1 > h1 {
+  margin-top: 1.75em;
+}
+#thankYouFeedbackV1 > a {
+  float: right;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+#feedbackFormV1 select,
+#feedbackFormV1 textarea {
+  margin-bottom: 0.5em;
+}
+#feedbackFormV1 > a[data-action="showFeedbackDetails"] {
+  display: block;
+}
+#feedbackFormV1 > label {
+  margin-bottom: 0;
+}
+#feedbackFormV1 .missingScreenshot {
+  height: auto;
+}
+#feedbackFormV1 .missingScreenshot,
+#feedbackFormV1 .screenshot {
+  margin-top: 0.5em;
+}
+#feedbackDetailsV1 .screenshot {
+  margin-top: 1em;
+}
+#feedbackDetailsV1 table {
+  table-layout: fixed;
+  width: 100%;
+}
+#feedbackDetailsV1 p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+#feedbackDetailsV1 table,
+#feedbackDetailsV1 tbody {
+  display: block;
+  width: calc(100% - 15px); /* less the right margin, so scrollbars are not pushed off-screen */
+}
+#feedbackDetailsV1 tr {
+  display: flex;
+}
+#feedbackDetailsV1 th {
+  flex-grow: 0;
+}
+#feedbackDetailsV1 td {
+  flex-grow: 1;
 }
