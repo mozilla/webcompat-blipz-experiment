@@ -73,6 +73,7 @@
       }
     }
   },
+  "hidden": true,
   "page_action": {
     "browser_style": true,
     "default_icon": "icons/broken_page.svg",

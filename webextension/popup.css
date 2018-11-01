@@ -10,6 +10,7 @@
 body {
   background-color: #fff;
   max-width: 36em;
+  overflow-x: hidden;
 }
 body.thankYou {
   background-color: #0060df;
@@ -35,6 +36,20 @@ button {
   border: 0;
   background: #ddd;
   text-align: center;
+}
+button:focus,
+input[type="button"]:focus {
+  outline: 1px dotted #000;
+  -moz-outline-radius: 4px;
+}
+input[type="button"]::-moz-focus-inner,
+button::-moz-focus-inner {
+  border: 0;
+}
+section > button:focus {
+  outline: 0;
+  -moz-outline-radius: 0;
+  border: 1px dotted #000;
 }
 input[type="button"],
 button,

@@ -117,7 +117,7 @@
     "message": "Select full page"
   },
   "cancelScreenshot": {
-    "message": "Skip"
+    "message": "Cancel"
   },
   "performancePromptIntroduction": {
     "message": "What is the problem?"

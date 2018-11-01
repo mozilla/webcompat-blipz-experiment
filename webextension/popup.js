@@ -168,13 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-
-  document.querySelectorAll("[name=description], [data-detail=description]").forEach(ta => {
-    autosizeTextArea(ta);
-  });
 });
 
 function autosizeTextArea(el) {
+  const heightVarname = el.name + "Height";
+  const userSetHeight = (gState.preferences || {})[heightVarname];
   function resize() {
     el.style.height = "auto";
     const popup = document.scrollingElement;
@@ -185,13 +183,44 @@ function autosizeTextArea(el) {
   }
   if (!el.getAttribute("data-ready")) {
     el.setAttribute("data-ready", 1);
-    el.addEventListener("keydown", resize);
-    el.addEventListener("keypress", resize);
-    el.addEventListener("keyup", resize);
-    el.addEventListener("compositionstart", resize);
-    el.addEventListener("compositionupdate", resize);
-    el.addEventListener("compositionend", resize);
+
+    let heightOnDown;
+    el.addEventListener("mousedown", () => {
+      heightOnDown = el.clientHeight;
+    });
+    el.addEventListener("mouseup", () => {
+      if (heightOnDown !== undefined &&
+          heightOnDown !== el.clientHeight) {
+        // user has manually resized the textarea; don't auto-size it anymore.
+        el.removeEventListener("keydown", resize);
+        el.removeEventListener("keypress", resize);
+        el.removeEventListener("keyup", resize);
+        el.removeEventListener("compositionstart", resize);
+        el.removeEventListener("compositionupdate", resize);
+        el.removeEventListener("compositionend", resize);
+
+        const preferences = {};
+        preferences[heightVarname] = el.clientHeight;
+        portToBGScript.send({preferences});
+      }
+    });
+    if (userSetHeight === undefined) {
+      // If the user has manually sized the textarea, don't autosize.
+      el.addEventListener("keydown", resize);
+      el.addEventListener("keypress", resize);
+      el.addEventListener("keyup", resize);
+      el.addEventListener("compositionstart", resize);
+      el.addEventListener("compositionupdate", resize);
+      el.addEventListener("compositionend", resize);
+    }
   }
+
+  if (userSetHeight !== undefined) {
+    // If the user has manually sized the textarea, just use that size.
+    el.style.height = userSetHeight + "px";
+    return;
+  }
+
   resize();
 }
 
@@ -236,6 +265,11 @@ function onMessage(update) {
       }
     }
 
+    if (update.slide === "performanceFeedback") {
+      if ("performanceDescription" in update) {
+        document.querySelector(`#performanceFeedback textarea`).value = update.performanceDescription;
+      }
+    }
     if (update.slide === "problemReport") {
       if ("description" in update) {
         document.querySelector(`#problemReport #problemDescription`).value = update.description;
@@ -279,7 +313,13 @@ function onMessage(update) {
     });
   }
 
-  document.querySelectorAll("[name=description], [data-detail=description]").forEach(ta => {
+  // Wait until we've received our state from the background page before
+  // setting up autosizing for text-areas, because we need to know if the
+  // user has manually set their size (stored in gState.preferences).
+  document.querySelectorAll(`[name=description],
+                             [name=problemDescription],
+                             [name=performanceDescription],
+                             [data-detail=description]`).forEach(ta => {
     autosizeTextArea(ta);
   });
 }

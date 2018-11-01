@@ -4,6 +4,7 @@
     "stylelint-config-standard"
   ],
   "rules": {
+    "no-descending-specificity": null,
     "rule-empty-line-before": null,
     "selector-combinator-space-before": null,
     "selector-combinator-space-after": null

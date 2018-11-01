@@ -537,6 +537,9 @@ function createPortListener(opts) {
     }
 
     // When the port is opened.
+    if (opts.onConnect) {
+      opts.onConnect();
+    }
     port = _port;
     if (opts.onMessage) {
       port.onMessage.addListener(opts.onMessage);
@@ -574,6 +577,9 @@ function createPortListener(opts) {
 const portToPageAction = createPortListener({
   name: "pageActionPopupPort",
   onMessage: onMessageFromPageAction,
+  onConnect: () => {
+    hideScreenshotsUI();
+  },
   onDisconnect: () => {
     // Update the page action icon for whichever tab we're on now.
     TabState.get().then(tabState => {
@@ -605,6 +611,7 @@ const TabState = (function() {
           domain,
           tabId: this._tabId,
           slide: this._slide,
+          preferences: this._userPreferences,
           uiVariant: Config.uiVariant,
         });
         let update;
@@ -638,6 +645,7 @@ const TabState = (function() {
       this._slide = initialPrompt[Config.uiVariant];
       this._blipz_session_id = Date.now().toString();
       this.takenPageActionExit = undefined;
+      this._userPreferences = {};
       this.updateReport();
     }
 
@@ -669,6 +677,10 @@ const TabState = (function() {
 
     get userPrompted() {
       return this._report.userPrompted;
+    }
+
+    updateUserPreferences(updates) {
+      this._userPreferences = Object.assign(this._userPreferences || {}, updates);
     }
 
     updateReport(updates) {
@@ -923,6 +935,11 @@ async function handleTabChange(tabId, url) {
 }
 
 async function onNavigationCommitted(navDetails) {
+  // Don't do anything for the control experiment
+  if (Config._uiVariant === "control") {
+    return;
+  }
+
   const { url, tabId, frameId } = navDetails;
 
   // We only care about top-level navigations, not frames.
@@ -952,6 +969,11 @@ async function onNavigationCommitted(navDetails) {
 }
 
 async function onNavigationCompleted(navDetails) {
+  // Don't do anything for the control experiment
+  if (Config._uiVariant === "control") {
+    return;
+  }
+
   const { url, tabId, frameId } = navDetails;
 
   // We only care about top-level navigations, not frames.
@@ -1102,8 +1124,16 @@ function loadScreenshotUI(tabId, tabState) {
   tabState.isTakingScreenshot = true;
 }
 
+function hideScreenshotsUI() {
+  selectorLoader.unloadIfLoaded();
+  TabState.get().then(tabState => {
+    tabState.isTakingScreenshot = false;
+  });
+  unhideRealScreenshotsUI();
+}
+
 async function onMessageFromPageAction(message) {
-  const { tabId, command, exit } = message;
+  const { tabId, command, preferences, exit } = message;
 
   const tabState = await TabState.get(tabId);
 
@@ -1119,7 +1149,12 @@ async function onMessageFromPageAction(message) {
     return undefined;
   }
 
+  if (preferences) {
+    tabState.updateUserPreferences(preferences);
+  }
+
   delete message.tabId;
+  delete message.textareaHeight;
   delete message.command;
   delete message.exit;
   if (Object.keys(message).length) {
@@ -1242,39 +1277,48 @@ async function handleButtonClick(command, tabState) {
   handler && handler(command, tabState);
 }
 
-SlideButtonClickHandlers.initialPrompt =
-SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
-  const siteWorks = command === "yes";
-  const siteSlow = command === "slow";
-  tabState.maybeSendTelemetry({satisfiedSitePrompt: siteSlow ? "slow" : yesOrNo(siteWorks)});
-  if (siteWorks) {
+SlideButtonClickHandlers.initialPrompt = (command, tabState) => {
+  if (command === "yes") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes"});
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
-  } else if (siteSlow) {
-    tabState.slide = "performanceFeedback";
-  } else if (Config.uiVariant === "little-sentiment") {
+  } else {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
     tabState.slide = "performancePrompt";
-  } else if (Config.uiVariant === "more-sentiment") {
-    loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+  }
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
+  if (command === "yes") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes"});
+    tabState.slide = "thankYouFeedback";
+    tabState.markAsVerified();
+  } else if (command === "slow") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "slow"});
+    tabState.slide = "performanceFeedback";
+  } else if (command === "no") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
+    if (!tabState.screenshot) {
+      loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+    }
     tabState.slide = "problemReport";
   }
   handleCancelAction(command, tabState);
 };
 
 SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
-  const isPerformanceIssue = command === "performanceIssue";
-  const isSomethingElse = command === "somethingElse";
-  if (isPerformanceIssue) {
+  if (command === "performanceIssue") {
+    tabState.maybeSendTelemetry({slowOrSomethingElse: "slow"});
     tabState.slide = "performanceFeedback";
-  } else if (isSomethingElse) {
-    loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+  } else if (command === "somethingElse") {
+    tabState.maybeSendTelemetry({slowOrSomethingElse: "somethingElse"});
+    if (!tabState.screenshot) {
+      loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+    }
     tabState.slide = "problemReport";
   } else if (command === "back") {
-    if (Config.uiVariant === "little-sentiment") {
-      tabState.slide = "initialPrompt";
-    } else if (Config.uiVariant === "more-sentiment") {
-      tabState.slide = "initialPromptSentiment";
-    }
+    tabState.slide = "initialPromptSentiment";
   }
   handleCancelAction(command, tabState);
 };
