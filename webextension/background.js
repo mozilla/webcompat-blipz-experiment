@@ -1263,19 +1263,27 @@ async function handleButtonClick(command, tabState) {
   handler && handler(command, tabState);
 }
 
-SlideButtonClickHandlers.initialPrompt =
-SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
-  const siteWorks = command === "yes";
-  const siteSlow = command === "slow";
-  tabState.maybeSendTelemetry({satisfiedSitePrompt: siteSlow ? "slow" : yesOrNo(siteWorks)});
-  if (siteWorks) {
+SlideButtonClickHandlers.initialPrompt = (command, tabState) => {
+  if (command === "yes") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes"});
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
-  } else if (siteSlow) {
-    tabState.slide = "performanceFeedback";
-  } else if (Config.uiVariant === "little-sentiment") {
+  } else {
     tabState.slide = "performancePrompt";
-  } else if (Config.uiVariant === "more-sentiment") {
+  }
+  handleCancelAction(command, tabState);
+};
+
+SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
+  if (command === "yes") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes"});
+    tabState.slide = "thankYouFeedback";
+    tabState.markAsVerified();
+  } else if (command === "slow") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "slow"});
+    tabState.slide = "performanceFeedback";
+  } else if (command === "no") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
     if (!tabState.screenshot) {
       loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
     }
@@ -1285,21 +1293,17 @@ SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
 };
 
 SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
-  const isPerformanceIssue = command === "performanceIssue";
-  const isSomethingElse = command === "somethingElse";
-  if (isPerformanceIssue) {
+  if (command === "performanceIssue") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "slow"});
     tabState.slide = "performanceFeedback";
-  } else if (isSomethingElse) {
+  } else if (command === "somethingElse") {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
     if (!tabState.screenshot) {
       loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
     }
     tabState.slide = "problemReport";
   } else if (command === "back") {
-    if (Config.uiVariant === "little-sentiment") {
-      tabState.slide = "initialPrompt";
-    } else if (Config.uiVariant === "more-sentiment") {
-      tabState.slide = "initialPromptSentiment";
-    }
+    tabState.slide = "initialPromptSentiment";
   }
   handleCancelAction(command, tabState);
 };
