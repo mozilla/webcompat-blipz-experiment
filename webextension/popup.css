@@ -28,38 +28,109 @@ textarea {
   border-radius: 4px;
   border: 1px solid #e1e1e1;
   width: 100%;
-  background: #f1f1f1;
-  padding: 0 0.5em;
-  height: 2.5em;
+  background-color: #f1f1f1;
+  color: #0c0c0d;
+  height: 32px;
+  padding: 8px;
 }
 button {
   border: 0;
-  background: #ddd;
+  background-color: rgba(12, 12, 13, 0.1);
+  color: #0c0c0d;
   text-align: center;
 }
-button:focus,
-input[type="button"]:focus {
-  outline: 1px dotted #000;
-  -moz-outline-radius: 4px;
+button:hover {
+  background-color: rgba(12, 12, 13, 0.2);
 }
-input[type="button"]::-moz-focus-inner,
-button::-moz-focus-inner {
+button:active {
+  background-color: rgba(12, 12, 13, 0.3);
+}
+select:focus,
+textarea:focus,
+input[type="button"]:focus,
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+  outline: 0;
   border: 0;
 }
-section > button:focus {
-  outline: 0;
-  -moz-outline-radius: 0;
-  border: 1px dotted #000;
+select:focus,
+textarea:focus {
+  padding: 9px;
 }
-input[type="button"],
-button,
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 1px #0a84ff inset, 0 0 0 1px #0a84ff, 0 0 0 4px rgba(10, 132, 255, 0.3);
+}
 select {
-  line-height: 2.5em;
+  -moz-appearance: none;
+  height: auto;
+  padding: 7px 8px 6px 8px;
+}
+select:focus {
+  height: auto;
+  padding: 8px 9px 7px 9px;
+}
+select:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #000;
+}
+select:-moz-focusring option:disabled {
+  text-shadow: none;
+}
+button::-moz-focus-inner,
+input[type="button"]::-moz-focus-inner,
+input[type="checkbox"]::-moz-focus-inner,
+input[type="radio"]::-moz-focus-inner {
+  border: 0;
+  outline: 0;
+}
+input[type="radio"],
+input[type="checkbox"] {
+  -moz-appearance: none;
+  height: 16px;
+  width: 16px;
+  border: 1px solid rgba(12, 12, 13, 0.3);
+  background: rgba(12, 12, 13, 0.1);
+}
+input[type="radio"] {
+  border-radius: 100%;
+}
+input[type="checkbox"] {
+  border-radius: 2px;
+}
+input[type="radio"]:hover,
+input[type="checkbox"]:hover {
+  background-color: rgba(12, 12, 13, 0.2);
+}
+input[type="radio"]:active,
+input[type="checkbox"]:active {
+  background-color: rgba(12, 12, 13, 0.3);
+}
+input[type="radio"]:checked,
+input[type="checkbox"]:checked {
+  background-color: #0060df;
+  background-position: 50% 50%;
+  border: 0;
+}
+input[type="radio"]:checked {
+  background-image: url("icons/radiobutton-marker-16.svg");
+}
+input[type="checkbox"]:checked {
+  background-image: url("icons/checkbox-check-16.svg");
+}
+input[type="radio"]:hover:checked,
+input[type="checkbox"]:hover:checked {
+  background-color: #003eaa;
+}
+input[type="radio"]:active,
+input[type="checkbox"]:active:checked {
+  background-color: #002275;
 }
 textarea {
   box-sizing: content-box;
   width: calc(100% - 1.25em) !important;
-  padding: 0.5em;
   min-height: 3.5em;
 }
 textarea,
@@ -161,6 +232,9 @@ section > button {
   float: left;
   height: 3em;
 }
+section > button:focus {
+  border-top: 0;
+}
 section > * + button,
 section > * + button + button {
   margin-top: 8px;
@@ -181,9 +255,6 @@ section > h2 > button {
   background-position: 50% 50%;
   background-repeat: no-repeat;
   background-size: 24px 24px;
-}
-section > button + button {
-  border-left: 1px solid #e1e1e1;
 }
 section > div > * + button {
   margin-top: 8px;
@@ -212,10 +283,15 @@ section.withIcon > table {
   margin-left: 75px;
   margin-right: 45px;
 }
-button.emphasize,
-button:active {
+button.emphasize {
   color: #fff;
-  background-color: #0260de;
+  background-color: #0060df;
+}
+button.emphasize:hover {
+  background-color: #003eaa;
+}
+button.emphasize:active {
+  background-color: #002275;
 }
 .missingScreenshot,
 .screenshot {

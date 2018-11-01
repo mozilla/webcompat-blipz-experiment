@@ -139,15 +139,15 @@ document.addEventListener("DOMContentLoaded", () => {
     "description": "placeholderIssueDescription",
     "performanceDescription": "placeholderPerformanceDescription"
   })) {
-    const input = document.querySelector(`[name=${name}]`);
-    input.placeholder = browser.i18n.getMessage(msgId);
-
-    input.addEventListener("change", e => {
-      const message = {};
-      message[input.name] = input.value;
-      gState[name] = input.value;
-      portToBGScript.send(message);
-    });
+    for (const input of document.querySelectorAll(`[name=${name}]`)) {
+      input.placeholder = browser.i18n.getMessage(msgId);
+      input.addEventListener("change", e => {
+        const message = {};
+        message[input.name] = input.value;
+        gState[name] = input.value;
+        portToBGScript.send(message);
+      });
+    }
   }
 
   document.querySelector("#problemReportForm").addEventListener("change", e => {
@@ -178,7 +178,7 @@ function autosizeTextArea(el) {
     const popup = document.scrollingElement;
     const popupKidHeights = Array.map.call(null, popup.childNodes, n => n.clientHeight);
     const heightOfRest = popupKidHeights.reduce((a, c) => a + (c || 0), 0) - el.clientHeight;
-    const maxHeight = 588 - heightOfRest; // 588px seems to be the max-height of the popup
+    const maxHeight = 580 - heightOfRest; // ~580px seems to be the max-height of the popup
     el.style.height = Math.min(maxHeight, el.scrollHeight) + "px";
   }
   if (!el.getAttribute("data-ready")) {
@@ -312,6 +312,10 @@ function onMessage(update) {
       }
     });
   }
+
+  document.querySelectorAll(`[name="neverShowAgain"]`).forEach(input => {
+    input.checked = gState.neverShowAgain;
+  });
 
   // Wait until we've received our state from the background page before
   // setting up autosizing for text-areas, because we need to know if the
