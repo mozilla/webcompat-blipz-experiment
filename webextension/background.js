@@ -1276,7 +1276,9 @@ SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
   } else if (Config.uiVariant === "little-sentiment") {
     tabState.slide = "performancePrompt";
   } else if (Config.uiVariant === "more-sentiment") {
-    loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+    if (!tabState.screenshot) {
+      loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+    }
     tabState.slide = "problemReport";
   }
   handleCancelAction(command, tabState);
@@ -1288,7 +1290,9 @@ SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
   if (isPerformanceIssue) {
     tabState.slide = "performanceFeedback";
   } else if (isSomethingElse) {
-    loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+    if (!tabState.screenshot) {
+      loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
+    }
     tabState.slide = "problemReport";
   } else if (command === "back") {
     if (Config.uiVariant === "little-sentiment") {
