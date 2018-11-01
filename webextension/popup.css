@@ -10,6 +10,7 @@
 body {
   background-color: #fff;
   max-width: 36em;
+  overflow-x: hidden;
 }
 body.thankYou {
   background-color: #0060df;

@@ -605,6 +605,7 @@ const TabState = (function() {
           domain,
           tabId: this._tabId,
           slide: this._slide,
+          preferences: this._userPreferences,
           uiVariant: Config.uiVariant,
         });
         let update;
@@ -638,6 +639,7 @@ const TabState = (function() {
       this._slide = initialPrompt[Config.uiVariant];
       this._blipz_session_id = Date.now().toString();
       this.takenPageActionExit = undefined;
+      this._userPreferences = {};
       this.updateReport();
     }
 
@@ -669,6 +671,10 @@ const TabState = (function() {
 
     get userPrompted() {
       return this._report.userPrompted;
+    }
+
+    updateUserPreferences(updates) {
+      this._userPreferences = Object.assign(this._userPreferences || {}, updates);
     }
 
     updateReport(updates) {
@@ -1103,7 +1109,7 @@ function loadScreenshotUI(tabId, tabState) {
 }
 
 async function onMessageFromPageAction(message) {
-  const { tabId, command, exit } = message;
+  const { tabId, command, preferences, exit } = message;
 
   const tabState = await TabState.get(tabId);
 
@@ -1119,7 +1125,12 @@ async function onMessageFromPageAction(message) {
     return undefined;
   }
 
+  if (preferences) {
+    tabState.updateUserPreferences(preferences);
+  }
+
   delete message.tabId;
+  delete message.textareaHeight;
   delete message.command;
   delete message.exit;
   if (Object.keys(message).length) {
