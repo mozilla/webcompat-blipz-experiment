@@ -139,15 +139,15 @@ document.addEventListener("DOMContentLoaded", () => {
     "description": "placeholderIssueDescription",
     "performanceDescription": "placeholderPerformanceDescription"
   })) {
-    const input = document.querySelector(`[name=${name}]`);
-    input.placeholder = browser.i18n.getMessage(msgId);
-
-    input.addEventListener("change", e => {
-      const message = {};
-      message[input.name] = input.value;
-      gState[name] = input.value;
-      portToBGScript.send(message);
-    });
+    for (const input of document.querySelectorAll(`[name=${name}]`)) {
+      input.placeholder = browser.i18n.getMessage(msgId);
+      input.addEventListener("change", e => {
+        const message = {};
+        message[input.name] = input.value;
+        gState[name] = input.value;
+        portToBGScript.send(message);
+      });
+    }
   }
 
   document.querySelector("#problemReportForm").addEventListener("change", e => {
