@@ -537,6 +537,9 @@ function createPortListener(opts) {
     }
 
     // When the port is opened.
+    if (opts.onConnect) {
+      opts.onConnect();
+    }
     port = _port;
     if (opts.onMessage) {
       port.onMessage.addListener(opts.onMessage);
@@ -574,6 +577,9 @@ function createPortListener(opts) {
 const portToPageAction = createPortListener({
   name: "pageActionPopupPort",
   onMessage: onMessageFromPageAction,
+  onConnect: () => {
+    hideScreenshotsUI();
+  },
   onDisconnect: () => {
     // Update the page action icon for whichever tab we're on now.
     TabState.get().then(tabState => {
@@ -1116,6 +1122,14 @@ function loadScreenshotUI(tabId, tabState) {
   closePageAction();
   selectorLoader.loadModules(); // activate the screenshots UI
   tabState.isTakingScreenshot = true;
+}
+
+function hideScreenshotsUI() {
+  selectorLoader.unloadIfLoaded();
+  TabState.get().then(tabState => {
+    tabState.isTakingScreenshot = false;
+  });
+  unhideRealScreenshotsUI();
 }
 
 async function onMessageFromPageAction(message) {
