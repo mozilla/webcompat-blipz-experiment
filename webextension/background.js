@@ -559,7 +559,7 @@ function createPortListener(opts) {
 
   function send(message) {
     if (port) {
-      return port.postMessage(message);
+      return Promise.resolve(port.postMessage(message));
     }
     if (Config.testingMode) {
       console.trace();
