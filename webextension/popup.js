@@ -313,6 +313,10 @@ function onMessage(update) {
     });
   }
 
+  document.querySelectorAll(`[name="neverShowAgain"]`).forEach(input => {
+    input.checked = gState.neverShowAgain;
+  });
+
   // Wait until we've received our state from the background page before
   // setting up autosizing for text-areas, because we need to know if the
   // user has manually set their size (stored in gState.preferences).

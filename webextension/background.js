@@ -23,6 +23,7 @@ const Config = (function() {
   class Config {
     constructor() {
       this._loaded = false;
+      this._neverShowAgain = false;
       this._testingMode = true;
       this._skipPrivateBrowsingTabs = true;
       this._lastPromptTime = 0;
@@ -519,6 +520,14 @@ const Config = (function() {
     get releaseChannel() {
       return this._releaseChannel;
     }
+
+    get neverShowAgain() {
+      return this._neverShowAgain;
+    }
+
+    set neverShowAgain(bool) {
+      this._neverShowAgain = !!bool;
+    }
   }
 
   return new Config();
@@ -551,10 +560,6 @@ function createPortListener(opts) {
         opts.onDisconnect();
       }
     });
-
-    TabState.get().then(tabState => {
-      tabState.onPageActionShown();
-    });
   });
 
   function send(message) {
@@ -579,10 +584,19 @@ const portToPageAction = createPortListener({
   onMessage: onMessageFromPageAction,
   onConnect: () => {
     hideScreenshotsUI();
+    TabState.get().then(tabState => {
+      if (tabState) {
+        tabState.onPageActionShown();
+      }
+    });
   },
   onDisconnect: () => {
     // Update the page action icon for whichever tab we're on now.
     TabState.get().then(tabState => {
+      if (Config.neverShowAgain && tabState.isShowingThankYouPage()) {
+        endStudyAndDeactivate();
+        return;
+      }
       updatePageActionIcon(tabState.tabId);
     });
   },
@@ -612,6 +626,7 @@ const TabState = (function() {
           tabId: this._tabId,
           slide: this._slide,
           preferences: this._userPreferences,
+          neverShowAgain: Config.neverShowAgain,
           uiVariant: Config.uiVariant,
         });
         let update;
@@ -1132,21 +1147,23 @@ function hideScreenshotsUI() {
   unhideRealScreenshotsUI();
 }
 
+function endStudyAndDeactivate(cause = "user-disable") {
+  try {
+    browser.study.endStudy(cause).then(deactivate).catch(deactivate);
+  } catch (_) {
+    deactivate();
+  }
+}
+
 async function onMessageFromPageAction(message) {
   const { tabId, command, preferences, exit } = message;
 
   const tabState = await TabState.get(tabId);
 
   if ("neverShowAgain" in message) {
-    const after = () => {
-      try {
-        browser.study.endStudy("user-disable").then(deactivate).catch(deactivate);
-      } catch (_) {
-        deactivate();
-      }
-    };
-    tabState.maybeSendTelemetry({clickedDontShowAgain: "yes"}).catch(after).then(after);
-    return undefined;
+    Config.neverShowAgain = message.neverShowAgain;
+    tabState.maybeSendTelemetry({clickedDontShowAgain: yesOrNo(Config.neverShowAgain)});
+    return;
   }
 
   if (preferences) {
@@ -1200,8 +1217,6 @@ async function onMessageFromPageAction(message) {
       break;
     }
   }
-
-  return undefined;
 }
 
 let active = false;
@@ -1266,6 +1281,10 @@ function handleCancelAction(command, tabState) {
   if (command === "cancel") {
     closePageAction();
     tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
+    if (Config.neverShowAgain) {
+      endStudyAndDeactivate();
+      return;
+    }
     tabState.reset();
   }
 }
