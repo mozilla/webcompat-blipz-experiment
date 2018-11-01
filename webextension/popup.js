@@ -236,6 +236,11 @@ function onMessage(update) {
       }
     }
 
+    if (update.slide === "performanceFeedback") {
+      if ("performanceDescription" in update) {
+        document.querySelector(`#performanceFeedback textarea`).value = update.performanceDescription;
+      }
+    }
     if (update.slide === "problemReport") {
       if ("description" in update) {
         document.querySelector(`#problemReport #problemDescription`).value = update.description;
