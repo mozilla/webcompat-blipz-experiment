@@ -557,7 +557,7 @@ function createPortListener(opts) {
     });
   });
 
-  async function send(message) {
+  function send(message) {
     if (port) {
       return port.postMessage(message);
     }
@@ -631,7 +631,7 @@ const TabState = (function() {
           }
         }
         if (Object.keys(update).length) {
-          portToPageAction.send(update);
+          portToPageAction.send(update).catch(() => {});
         }
       }
     }
@@ -1435,7 +1435,7 @@ async function popupPageAction(tabId) {
 
 function closePageAction() {
   if (portToPageAction.isConnected()) {
-    portToPageAction.send("closePopup");
+    portToPageAction.send("closePopup").catch(() => {});
   }
 }
 
