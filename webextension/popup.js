@@ -178,7 +178,7 @@ function autosizeTextArea(el) {
     const popup = document.scrollingElement;
     const popupKidHeights = Array.map.call(null, popup.childNodes, n => n.clientHeight);
     const heightOfRest = popupKidHeights.reduce((a, c) => a + (c || 0), 0) - el.clientHeight;
-    const maxHeight = 588 - heightOfRest; // 588px seems to be the max-height of the popup
+    const maxHeight = 580 - heightOfRest; // ~580px seems to be the max-height of the popup
     el.style.height = Math.min(maxHeight, el.scrollHeight) + "px";
   }
   if (!el.getAttribute("data-ready")) {
