@@ -1269,6 +1269,7 @@ SlideButtonClickHandlers.initialPrompt = (command, tabState) => {
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
   } else {
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
     tabState.slide = "performancePrompt";
   }
   handleCancelAction(command, tabState);
@@ -1294,10 +1295,10 @@ SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
 
 SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
   if (command === "performanceIssue") {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "slow"});
+    tabState.maybeSendTelemetry({slowOrSomethingElse: "slow"});
     tabState.slide = "performanceFeedback";
   } else if (command === "somethingElse") {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
+    tabState.maybeSendTelemetry({slowOrSomethingElse: "somethingElse"});
     if (!tabState.screenshot) {
       loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
     }
