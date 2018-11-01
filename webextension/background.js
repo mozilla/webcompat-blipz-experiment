@@ -929,6 +929,11 @@ async function handleTabChange(tabId, url) {
 }
 
 async function onNavigationCommitted(navDetails) {
+  // Don't do anything for the control experiment
+  if (Config._uiVariant === "control") {
+    return;
+  }
+
   const { url, tabId, frameId } = navDetails;
 
   // We only care about top-level navigations, not frames.
@@ -958,6 +963,11 @@ async function onNavigationCommitted(navDetails) {
 }
 
 async function onNavigationCompleted(navDetails) {
+  // Don't do anything for the control experiment
+  if (Config._uiVariant === "control") {
+    return;
+  }
+
   const { url, tabId, frameId } = navDetails;
 
   // We only care about top-level navigations, not frames.
