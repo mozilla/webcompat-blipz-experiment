@@ -612,17 +612,47 @@ button[data-action="back"] {
 }
 
 /* v1 styles */
+#initialPromptV1,
+#thankYouV1,
+#thankYouFeedbackV1 {
+  background-position: 18px 20px;
+}
+#initialPromptV1 > h1 {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.2em;
+}
+#initialPromptV1 > p {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+#thankYouV1 > h1 {
+  font-size: 14px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+#thankYouFeedbackV1 > h1 {
+  font-size: 14px;
+  margin-top: 12px;
+}
 #thankYouV1,
 #thankYouFeedbackV1 {
   background-image: url(icons/done.svg);
+}
+#thankYouV1 {
+  width: 340px;
+}
+#thankYouV1 > button:only-of-type,
+#thankYouFeedbackV1 > button:only-of-type {
+  margin-top: 0;
 }
 #thankYouV1 > h1 {
   margin-top: 1.75em;
 }
 #thankYouFeedbackV1 > a {
   float: right;
-  margin-top: 1.5em;
-  margin-bottom: 1em;
+  margin-top: -8px;
+  margin-bottom: 16px;
 }
 #feedbackFormV1 select,
 #feedbackFormV1 textarea {
@@ -630,6 +660,8 @@ button[data-action="back"] {
 }
 #feedbackFormV1 > a[data-action="showFeedbackDetails"] {
   display: block;
+  margin-top: 12px;
+  margin-bottom: 0;
 }
 #feedbackFormV1 > label {
   margin-bottom: 0;
@@ -650,7 +682,7 @@ button[data-action="back"] {
 }
 #feedbackDetailsV1 p {
   margin-top: 1em;
-  margin-bottom: 1em;
+  margin-bottom: 0;
 }
 #feedbackDetailsV1 table,
 #feedbackDetailsV1 tbody {
