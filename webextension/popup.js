@@ -106,25 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // text needing to linkify the privacy policy
-  const link = document.createElement("a");
-  link.href = browser.i18n.getMessage("privacyPolicyLink");
-  link.innerText = browser.i18n.getMessage("privacyPolicyLinkText");
-  for (const [selector, msg] of Object.entries({
-    "#initialPrompt > p.privacyPolicy": "privacyPolicy",
-    "#initialPromptSentiment > p.privacyPolicy": "privacyPolicy",
-  })) {
-    const split = browser.i18n.getMessage(msg).split("<PrivacyPolicyLink>");
-    for (const node of document.querySelectorAll(selector)) {
-      split.forEach((txt, index) => {
-        if (index > 0) {
-          node.appendChild(link.cloneNode(true));
-        }
-        node.appendChild(document.createTextNode(txt));
-      });
-    }
-  }
-
   for (const [value, msgId] of Object.entries(gIssueTypeLabels)) {
     const input = document.querySelector(`input[value="${value}"]`);
     const msg = browser.i18n.getMessage(msgId);
@@ -243,6 +224,25 @@ function onMessage(update) {
       const elem = document.querySelector(selector);
       if (elem) {
         elem.innerText = elem.innerText.replace(toReplace, update.domain);
+      }
+    }
+
+    // text needing to linkify the privacy policy
+    const link = document.createElement("a");
+    link.href = browser.i18n.getMessage("privacyPolicyLink");
+    link.innerText = browser.i18n.getMessage("privacyPolicyLinkText");
+    for (const [selector, msg] of Object.entries({
+      "#initialPrompt > p.privacyPolicy": "privacyPolicy",
+      "#initialPromptSentiment > p.privacyPolicy": "privacyPolicy",
+    })) {
+      const split = browser.i18n.getMessage(msg).split("<PrivacyPolicyLink>");
+      for (const node of document.querySelectorAll(selector)) {
+        split.forEach((txt, index) => {
+          if (index > 0) {
+            node.appendChild(link.cloneNode(true));
+          }
+          node.appendChild(document.createTextNode(txt.replace(/<Domain>/g, update.domain)));
+        });
       }
     }
   }

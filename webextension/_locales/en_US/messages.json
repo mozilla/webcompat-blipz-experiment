@@ -90,7 +90,7 @@
     "message": "I'm Having Problems"
   },
   "privacyPolicy": {
-    "message": "Sending feedback will submit this domain to Mozilla. Your data will be handled in accordance with <PrivacyPolicyLink>."
+    "message": "Sending feedback will submit the domain <Domain> to Mozilla. Your data will be handled in accordance with <PrivacyPolicyLink>."
   },
   "privacyPolicyLinkText": {
     "message": "Mozilla's Privacy Policy"
