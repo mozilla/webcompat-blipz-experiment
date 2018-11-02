@@ -11,10 +11,12 @@ body {
   background-color: #fff;
   max-width: 384px;
   overflow-x: hidden;
-  font-family: "Segoe UI", "San Francisco", "Ubuntu", "Roboto", "Fira Sans", sans-serif;
+}
+body, input, select, textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu", "Roboto", "Fira Sans", sans-serif;
 }
 h1, h2, h3, h4, h5, h6, th {
-  font-family: "Segoe UI Semibold", "San Francisco Semibold", "Ubuntu Bold", "Roboto Bold", "Fira Sans Bold", sans-serif;
+  font-weight: 600;
 }
 body.thankYou {
   background-color: #0060df;
@@ -36,6 +38,8 @@ textarea {
   color: #0c0c0d;
   height: 32px;
   padding: 8px;
+  font-size: 13px;
+  line-height: 16px;
 }
 button {
   border: 0;
@@ -49,6 +53,9 @@ button:hover {
 button:active {
   background-color: rgba(12, 12, 13, 0.3);
 }
+textarea {
+  padding: 4px;
+}
 a:focus,
 select:focus,
 textarea:focus,
@@ -58,9 +65,11 @@ input[type="radio"]:focus {
   outline: 0;
   border: 0;
 }
-select:focus,
-textarea:focus {
+select:focus {
   padding: 9px;
+}
+textarea:focus {
+  padding: 5px;
 }
 a:focus,
 input:focus,
@@ -213,8 +222,8 @@ section > p,
 section > button,
 section > label,
 section > table {
-  font-size: 1rem;
-  line-height: 1.25em;
+  font-size: 13px;
+  line-height: 17px;
 }
 section > table tr {
   display: block;
@@ -248,8 +257,8 @@ section > * + button + button {
   border-top: 1px solid #d8d8d8;
 }
 section > h2 + p {
-  margin-top: 1.5em;
-  margin-bottom: 1em;
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
 section > h2 > button {
   position: absolute;
@@ -477,9 +486,14 @@ button[data-action="back"] {
   background-size: 1.2em;
 }
 
+#performanceFeedback,
+#performancePrompt {
+  width: 340px;
+}
+
 #performanceFeedback > button,
 #performancePrompt > button {
-  margin-top: 1.5em;
+  margin-top: 20px;
 }
 
 #initialPrompt button.siteWorks::before {
