@@ -171,10 +171,10 @@ section > h1 {
 }
 section > h2 {
   position: relative;
-  font-size: 1.1rem;
-  line-height: 1.2em;
+  font-size: 13px;
+  line-height: 17px;
   text-align: center;
-  padding: 0.75em 45px 0.75em 75px;
+  padding: 13px 45px 13px 75px;
   margin-bottom: 1.25em;
   border-bottom: 1px solid #e1e1e1;
 }
@@ -192,7 +192,7 @@ section > form,
 section > label,
 section > table {
   margin-left: 15px;
-  margin-right: 15px;
+  margin-right: 17px;
 }
 section > label {
   display: flex;
@@ -489,6 +489,22 @@ button[data-action="back"] {
 #performanceFeedback,
 #performancePrompt {
   width: 340px;
+}
+
+#performancePrompt > a,
+#performancePrompt > p,
+#performancePrompt > h1,
+#performancePrompt > div,
+#performancePrompt > form,
+#performancePrompt > label,
+#performancePrompt > table {
+  margin-left: 38px;
+  margin-right: 36px;
+}
+
+#performancePrompt > h2 + p {
+  margin-top: 26px;
+  margin-bottom: 16px;
 }
 
 #performanceFeedback > button,
