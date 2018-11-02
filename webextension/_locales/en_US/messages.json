@@ -60,13 +60,13 @@
     "message": "Video or audio doesn't play"
   },
   "issueLabelOther": {
-    "message": "Something Else"
+    "message": "Something else"
   },
   "labelNeverShowAgain": {
     "message": "Don't show this again"
   },
   "placeholderIssueType": {
-    "message": "Category of the issue:"
+    "message": "Category of the Issue:"
   },
   "placeholderPerformanceDescription": {
     "message": "Optional comment"
@@ -129,7 +129,7 @@
     "message": "It's Slow"
   },
   "promptPerformanceOther": {
-    "message": "Something else"
+    "message": "Something Else"
   },
   "performanceFeedbackIntroduction": {
     "message": "You said it's slow"
@@ -141,19 +141,19 @@
     "message": "Capture screen"
   },
   "takeAScreenshot": {
-    "message": "Take a screenshot"
+    "message": "Take a Screenshot"
   },
   "retakeScreenshot": {
-    "message": "Retake screenshot"
+    "message": "Retake Screenshot"
   },
   "issueDescriptionLabel": {
-    "message": "Issue description:"
+    "message": "Issue Description:"
   },
   "placeholderIssueDescription": {
     "message": "Description"
   },
   "problemReportTitle": {
-    "message": "Problem report"
+    "message": "Problem Report"
   },
 
   "myShotsLink": {

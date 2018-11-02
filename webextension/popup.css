@@ -145,8 +145,8 @@ input[type="checkbox"]:active:checked {
 }
 textarea {
   box-sizing: content-box;
-  width: calc(100% - 1.25em) !important;
-  min-height: 3.5em;
+  width: calc(100% - 12px) !important;
+  min-height: 82px;
 }
 textarea,
 [data-detail="description"] {
@@ -191,8 +191,8 @@ section > div,
 section > form,
 section > label,
 section > table {
-  margin-left: 15px;
-  margin-right: 17px;
+  margin-left: 16px;
+  margin-right: 16px;
 }
 section > label {
   display: flex;
@@ -238,7 +238,8 @@ section > table td {
 section > form > * {
   display: block;
   width: 100%;
-  margin-top: 1em;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 section > button {
   border: 0;
@@ -253,7 +254,7 @@ section > button:focus {
 }
 section > * + button,
 section > * + button + button {
-  margin-top: 8px;
+  margin-top: 20px;
   border-top: 1px solid #d8d8d8;
 }
 section > h2 + p {
@@ -383,7 +384,7 @@ section > h1 + button:only-of-type {
 }
 .missingScreenshot > .buttonbar > button {
   width: 100%;
-  margin: 1em;
+  margin: 16px;
   text-indent: 0;
 }
 [data-action="retakeScreenshot"] {
@@ -591,6 +592,15 @@ button[data-action="back"] {
   height: 17px;
   vertical-align: middle;
   padding-right: 8px;
+}
+
+#problemReport {
+  width: 340px;
+}
+
+#problemReport > form > div {
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 #performanceFeedback > h2,
