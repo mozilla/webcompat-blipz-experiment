@@ -670,6 +670,7 @@ const TabState = (function() {
 
     set url(url) {
       this._url = url;
+      this.updateReport({url});
     }
 
     get tabId() {
