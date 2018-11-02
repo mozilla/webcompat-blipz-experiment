@@ -449,6 +449,7 @@ button[data-action="back"] {
   color: #fff;
   min-width: 0;
   padding: 0;
+  white-space: nowrap;
 }
 
 #thankYouFeedback > span {
