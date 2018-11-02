@@ -9,8 +9,23 @@
 }
 body {
   background-color: #fff;
-  max-width: 36em;
+  max-width: 384px;
   overflow-x: hidden;
+}
+body,
+input,
+select,
+textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu", "Roboto", "Fira Sans", sans-serif;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+th {
+  font-weight: 600;
 }
 body.thankYou {
   background-color: #0060df;
@@ -32,6 +47,8 @@ textarea {
   color: #0c0c0d;
   height: 32px;
   padding: 8px;
+  font-size: 13px;
+  line-height: 16px;
 }
 button {
   border: 0;
@@ -45,6 +62,7 @@ button:hover {
 button:active {
   background-color: rgba(12, 12, 13, 0.3);
 }
+a:focus,
 select:focus,
 textarea:focus,
 input[type="button"]:focus,
@@ -53,10 +71,14 @@ input[type="radio"]:focus {
   outline: 0;
   border: 0;
 }
-select:focus,
-textarea:focus {
-  padding: 9px;
+select:focus {
+  height: auto;
+  padding: 8px 9px 7px 9px;
 }
+textarea:focus {
+  padding: 5px;
+}
+a:focus,
 input:focus,
 button:focus,
 select:focus,
@@ -67,10 +89,6 @@ select {
   -moz-appearance: none;
   height: auto;
   padding: 7px 8px 6px 8px;
-}
-select:focus {
-  height: auto;
-  padding: 8px 9px 7px 9px;
 }
 select:-moz-focusring {
   color: transparent;
@@ -129,9 +147,10 @@ input[type="checkbox"]:active:checked {
   background-color: #002275;
 }
 textarea {
+  padding: 4px;
   box-sizing: content-box;
-  width: calc(100% - 1.25em) !important;
-  min-height: 3.5em;
+  width: calc(100% - 12px) !important;
+  min-height: 82px;
 }
 textarea,
 [data-detail="description"] {
@@ -142,30 +161,32 @@ textarea {
   background: #fff;
 }
 section {
-  background-position: 24px 1.5em;
+  background-position: 18px 32px;
   background-repeat: no-repeat;
   background-size: 32px 32px;
-  min-width: 36em;
 }
 section:not(.active) {
   display: none;
 }
 section > h1 {
-  font-size: 1.2rem;
-  line-height: 1.2em;
-  margin-top: 1em;
+  font-size: 13px;
+  line-height: 1.5em;
+  margin-top: 29px;
 }
 section > h2 {
   position: relative;
-  font-size: 1.1rem;
-  line-height: 1.2em;
+  font-size: 13px;
+  line-height: 17px;
   text-align: center;
-  padding: 0.75em 45px 0.75em 75px;
+  padding: 13px 45px 13px 75px;
   margin-bottom: 1.25em;
   border-bottom: 1px solid #e1e1e1;
 }
 section > p {
-  margin-top: 0.75em;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5em;
 }
 section > a,
 section > p,
@@ -174,16 +195,16 @@ section > div,
 section > form,
 section > label,
 section > table {
-  margin-left: 15px;
-  margin-right: 15px;
+  margin-left: 16px;
+  margin-right: 16px;
 }
 section > label {
   display: flex;
   align-items: center;
-  line-height: 1.2em;
-  height: 1.2em;
-  margin-top: 0.75em;
-  margin-bottom: 1.25em;
+  line-height: 1.5em;
+  height: 17px;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 section > label > * {
   margin-right: 0.5em;
@@ -205,14 +226,13 @@ section > p,
 section > button,
 section > label,
 section > table {
-  font-size: 1rem;
-  line-height: 1.25em;
+  font-size: 13px;
+  line-height: 17px;
 }
 section > table tr {
   display: block;
 }
 section > table th {
-  font-weight: bold;
   padding-right: 0.5em;
 }
 section > table th,
@@ -222,7 +242,8 @@ section > table td {
 section > form > * {
   display: block;
   width: 100%;
-  margin-top: 1em;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 section > button {
   border: 0;
@@ -237,11 +258,12 @@ section > button:focus {
 }
 section > * + button,
 section > * + button + button {
-  margin-top: 8px;
+  margin-top: 20px;
+  border-top: 1px solid #d8d8d8;
 }
 section > h2 + p {
-  margin-top: 1.5em;
-  margin-bottom: 1em;
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
 section > h2 > button {
   position: absolute;
@@ -280,8 +302,8 @@ section.withIcon > div,
 section.withIcon > form,
 section.withIcon > label,
 section.withIcon > table {
-  margin-left: 75px;
-  margin-right: 45px;
+  margin-left: 68px;
+  margin-right: 36px;
 }
 button.emphasize {
   color: #fff;
@@ -358,7 +380,7 @@ button.emphasize:active {
   background-position: 0.5em 50%;
 }
 section > button:only-of-type {
-  margin-top: 0.75em;
+  margin-top: 20px;
   width: 100%;
 }
 section > h1 + button:only-of-type {
@@ -366,7 +388,7 @@ section > h1 + button:only-of-type {
 }
 .missingScreenshot > .buttonbar > button {
   width: 100%;
-  margin: 1em;
+  margin: 16px;
   text-indent: 0;
 }
 [data-action="retakeScreenshot"] {
@@ -418,6 +440,10 @@ button[data-action="back"] {
 
 .secondary {
   color: #737373;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  line-height: 1.5em;
 }
 
 .slowSentiment,
@@ -429,6 +455,7 @@ button[data-action="back"] {
   justify-content: center;
   border-width: 8px;
   border-left-style: solid;
+  height: 32px;
 }
 
 .positiveSentiment {
@@ -449,6 +476,7 @@ button[data-action="back"] {
   color: #fff;
   min-width: 0;
   padding: 0;
+  white-space: nowrap;
 }
 
 #thankYouFeedback > span {
@@ -463,15 +491,30 @@ button[data-action="back"] {
   background-size: 1.2em;
 }
 
-#initialPrompt > p,
-#initialPromptSentiment > p {
-  margin-top: 12px;
-  margin-bottom: 12px;
+#performanceFeedback,
+#performancePrompt {
+  width: 340px;
+}
+
+#performancePrompt > a,
+#performancePrompt > p,
+#performancePrompt > h1,
+#performancePrompt > div,
+#performancePrompt > form,
+#performancePrompt > label,
+#performancePrompt > table {
+  margin-left: 38px;
+  margin-right: 36px;
+}
+
+#performancePrompt > h2 + p {
+  margin-top: 26px;
+  margin-bottom: 16px;
 }
 
 #performanceFeedback > button,
 #performancePrompt > button {
-  margin-top: 1.5em;
+  margin-top: 20px;
 }
 
 #initialPrompt button.siteWorks::before {
@@ -512,9 +555,9 @@ button[data-action="back"] {
   display: inline-block;
   background-image: url(icons/performance.svg);
   background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
+  background-size: 16px 16px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   padding-right: 8px;
 }
@@ -524,9 +567,9 @@ button[data-action="back"] {
   display: inline-block;
   background-image: url(icons/alert-circle.svg);
   background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
+  background-size: 16px 16px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   padding-right: 8px;
 }
@@ -536,9 +579,9 @@ button[data-action="back"] {
   display: inline-block;
   background-image: url(icons/performance.svg);
   background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
+  background-size: 16px 16px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   padding-right: 8px;
 }
@@ -555,6 +598,15 @@ button[data-action="back"] {
   padding-right: 8px;
 }
 
+#problemReport {
+  width: 340px;
+}
+
+#problemReport > form > div {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
 #performanceFeedback > h2,
 #performancePrompt > h2,
 #problemReport > h2,
@@ -564,17 +616,44 @@ button[data-action="back"] {
 }
 
 /* v1 styles */
+#initialPromptV1,
+#thankYouV1,
+#thankYouFeedbackV1 {
+  background-position: 18px 20px;
+}
+#initialPromptV1 > h1 {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.2em;
+}
+#initialPromptV1 > p {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+#thankYouV1 > h1 {
+  font-size: 14px;
+  margin-bottom: 0;
+  margin-top: 1.75em;
+}
+#thankYouFeedbackV1 > h1 {
+  font-size: 14px;
+  margin-top: 12px;
+}
 #thankYouV1,
 #thankYouFeedbackV1 {
   background-image: url(icons/done.svg);
 }
-#thankYouV1 > h1 {
-  margin-top: 1.75em;
+#thankYouV1 {
+  width: 340px;
+}
+#thankYouV1 > button:only-of-type,
+#thankYouFeedbackV1 > button:only-of-type {
+  margin-top: 0;
 }
 #thankYouFeedbackV1 > a {
   float: right;
-  margin-top: 1.5em;
-  margin-bottom: 1em;
+  margin-top: -8px;
+  margin-bottom: 16px;
 }
 #feedbackFormV1 select,
 #feedbackFormV1 textarea {
@@ -582,6 +661,8 @@ button[data-action="back"] {
 }
 #feedbackFormV1 > a[data-action="showFeedbackDetails"] {
   display: block;
+  margin-top: 12px;
+  margin-bottom: 0;
 }
 #feedbackFormV1 > label {
   margin-bottom: 0;
@@ -602,7 +683,7 @@ button[data-action="back"] {
 }
 #feedbackDetailsV1 p {
   margin-top: 1em;
-  margin-bottom: 1em;
+  margin-bottom: 0;
 }
 #feedbackDetailsV1 table,
 #feedbackDetailsV1 tbody {
