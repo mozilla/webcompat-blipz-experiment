@@ -9,8 +9,12 @@
 }
 body {
   background-color: #fff;
-  max-width: 36em;
+  max-width: 384px;
   overflow-x: hidden;
+  font-family: "Segoe UI", "San Francisco", "Ubuntu", "Roboto", "Fira Sans", sans-serif;
+}
+h1, h2, h3, h4, h5, h6, th {
+  font-family: "Segoe UI Semibold", "San Francisco Semibold", "Ubuntu Bold", "Roboto Bold", "Fira Sans Bold", sans-serif;
 }
 body.thankYou {
   background-color: #0060df;
@@ -45,6 +49,7 @@ button:hover {
 button:active {
   background-color: rgba(12, 12, 13, 0.3);
 }
+a:focus,
 select:focus,
 textarea:focus,
 input[type="button"]:focus,
@@ -57,6 +62,7 @@ select:focus,
 textarea:focus {
   padding: 9px;
 }
+a:focus,
 input:focus,
 button:focus,
 select:focus,
@@ -142,18 +148,17 @@ textarea {
   background: #fff;
 }
 section {
-  background-position: 24px 1.5em;
+  background-position: 18px 32px;
   background-repeat: no-repeat;
   background-size: 32px 32px;
-  min-width: 36em;
 }
 section:not(.active) {
   display: none;
 }
 section > h1 {
-  font-size: 1.2rem;
-  line-height: 1.2em;
-  margin-top: 1em;
+  font-size: 13px;
+  line-height: 1.5em;
+  margin-top: 29px;
 }
 section > h2 {
   position: relative;
@@ -165,7 +170,10 @@ section > h2 {
   border-bottom: 1px solid #e1e1e1;
 }
 section > p {
-  margin-top: 0.75em;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5em;
 }
 section > a,
 section > p,
@@ -180,10 +188,10 @@ section > table {
 section > label {
   display: flex;
   align-items: center;
-  line-height: 1.2em;
-  height: 1.2em;
-  margin-top: 0.75em;
-  margin-bottom: 1.25em;
+  line-height: 1.5em;
+  height: 17px;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 section > label > * {
   margin-right: 0.5em;
@@ -212,7 +220,6 @@ section > table tr {
   display: block;
 }
 section > table th {
-  font-weight: bold;
   padding-right: 0.5em;
 }
 section > table th,
@@ -238,6 +245,7 @@ section > button:focus {
 section > * + button,
 section > * + button + button {
   margin-top: 8px;
+  border-top: 1px solid #d8d8d8;
 }
 section > h2 + p {
   margin-top: 1.5em;
@@ -280,8 +288,8 @@ section.withIcon > div,
 section.withIcon > form,
 section.withIcon > label,
 section.withIcon > table {
-  margin-left: 75px;
-  margin-right: 45px;
+  margin-left: 68px;
+  margin-right: 36px;
 }
 button.emphasize {
   color: #fff;
@@ -358,7 +366,7 @@ button.emphasize:active {
   background-position: 0.5em 50%;
 }
 section > button:only-of-type {
-  margin-top: 0.75em;
+  margin-top: 20px;
   width: 100%;
 }
 section > h1 + button:only-of-type {
@@ -418,6 +426,10 @@ button[data-action="back"] {
 
 .secondary {
   color: #737373;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  line-height: 1.5em;
 }
 
 .slowSentiment,
@@ -429,6 +441,7 @@ button[data-action="back"] {
   justify-content: center;
   border-width: 8px;
   border-left-style: solid;
+  height: 32px;
 }
 
 .positiveSentiment {
@@ -462,12 +475,6 @@ button[data-action="back"] {
   background-position: 0.5em 50%;
   background-repeat: no-repeat;
   background-size: 1.2em;
-}
-
-#initialPrompt > p,
-#initialPromptSentiment > p {
-  margin-top: 12px;
-  margin-bottom: 12px;
 }
 
 #performanceFeedback > button,
@@ -513,9 +520,9 @@ button[data-action="back"] {
   display: inline-block;
   background-image: url(icons/performance.svg);
   background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
+  background-size: 16px 16px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   padding-right: 8px;
 }
@@ -525,9 +532,9 @@ button[data-action="back"] {
   display: inline-block;
   background-image: url(icons/alert-circle.svg);
   background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
+  background-size: 16px 16px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   padding-right: 8px;
 }
@@ -537,9 +544,9 @@ button[data-action="back"] {
   display: inline-block;
   background-image: url(icons/performance.svg);
   background-repeat: no-repeat;
-  background-size: 17px 17px;
-  width: 17px;
-  height: 17px;
+  background-size: 16px 16px;
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
   padding-right: 8px;
 }
