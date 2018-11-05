@@ -1338,7 +1338,7 @@ SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
     }
     tabState.slide = "problemReport";
   } else if (command === "back") {
-    tabState.slide = "initialPromptSentiment";
+    tabState.slide = "initialPrompt";
   }
   handleCancelAction(command, tabState);
 };
