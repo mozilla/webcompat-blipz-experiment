@@ -276,24 +276,24 @@ function onMessage(update) {
     }
 
     if (update.slide === "performanceFeedback") {
-      if ("performanceDescription" in update) {
-        document.querySelector(`#performanceFeedback textarea`).value = update.performanceDescription;
+      if ("performanceDescription" in gState) {
+        document.querySelector(`#performanceFeedback textarea`).value = gState.performanceDescription;
       }
     }
     if (update.slide === "problemReport") {
-      if ("description" in update) {
-        document.querySelector(`#problemReport #problemDescription`).value = update.description;
+      if ("description" in gState) {
+        document.querySelector(`#problemReport #problemDescription`).value = gState.description;
       }
-      if ("type" in update) {
-        document.querySelector(`#problemReport [value=${update.type}]`).checked = true;
+      if ("type" in gState) {
+        document.querySelector(`#problemReport [value=${gState.type}]`).checked = true;
       }
     }
     if (update.slide === "feedbackFormV1") {
-      if ("description" in update) {
-        document.querySelector(`#feedbackFormV1 textarea`).value = update.description;
+      if ("description" in gState) {
+        document.querySelector(`#feedbackFormV1 textarea`).value = gState.description;
       }
-      if ("type" in update) {
-        document.querySelector(`#feedbackFormV1 select`).value = update.type;
+      if ("type" in gState) {
+        document.querySelector(`#feedbackFormV1 select`).value = gState.type;
       }
     }
   }
