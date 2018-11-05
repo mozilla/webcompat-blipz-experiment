@@ -119,6 +119,9 @@
   "cancelScreenshot": {
     "message": "Cancel"
   },
+  "skipScreenshot": {
+    "message": "Skip"
+  },
   "performancePromptIntroduction": {
     "message": "What is the problem?"
   },

@@ -300,7 +300,7 @@ this.ui = (function() { // eslint-disable-line no-unused-vars
                      <div class="preview-instructions" data-l10n-id="screenshotInstructions"></div>
                      <div>
                        <button class="visible" data-l10n-id="saveScreenshotVisibleArea"></button>
-                       <button class="cancel-shot">${browser.i18n.getMessage("cancelScreenshot")}</button>
+                       <button class="cancel-shot">${browser.i18n.getMessage("skipScreenshot")}</button>
                      </div>
                      <div class="myshots-all-buttons-container">
                        ${isDownloadOnly() ? "" : `
