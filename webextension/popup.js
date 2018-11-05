@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
         portToBGScript.send(message);
       }
     });
+  });
 
   for (const name of ["neverShowAgain"]) {
     document.querySelectorAll(`[name="${name}"]`).forEach(input => {
