@@ -44,6 +44,9 @@
   "detailLabel_url": {
     "message": "URL:"
   },
+  "back": {
+    "message": "Back"
+  },
   "errorScreenshotFail": {
     "message": "Error taking a screenshot"
   },
@@ -148,6 +151,9 @@
   },
   "retakeScreenshot": {
     "message": "Retake Screenshot"
+  },
+  "removeScreenshot": {
+    "message": "Remove screenshot"
   },
   "issueDescriptionLabel": {
     "message": "Issue Description:"

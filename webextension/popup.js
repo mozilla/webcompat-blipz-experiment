@@ -131,6 +131,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  for (const [selector, msgId] of Object.entries({
+    "[data-action='removeScreenshot']": "removeScreenshot",
+    "[data-action='back']": "back"
+  })) {
+    const txt = browser.i18n.getMessage(msgId);
+    for (const node of document.querySelectorAll(selector)) {
+      node.setAttribute("aria-label", txt);
+    }
+  }
+
   document.querySelector("#problemReportForm").addEventListener("change", e => {
     const input = e.target;
     if (input.name === "type") {
