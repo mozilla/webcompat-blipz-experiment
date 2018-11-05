@@ -141,14 +141,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  document.querySelector("#problemReportForm").addEventListener("change", e => {
-    const input = e.target;
-    if (input.name === "type") {
-      const message = {};
-      message.type = gState.type = input.value;
-      portToBGScript.send(message);
-    }
-  });
+  document.querySelectorAll("#problemReportForm, #feedbackFormV1>form").forEach(form => {
+    form.addEventListener("change", e => {
+      const input = e.target;
+      if (input.name === "type") {
+        const message = {};
+        message.type = gState.type = input.value;
+        portToBGScript.send(message);
+      }
+    });
 
   for (const name of ["neverShowAgain"]) {
     document.querySelectorAll(`[name="${name}"]`).forEach(input => {
