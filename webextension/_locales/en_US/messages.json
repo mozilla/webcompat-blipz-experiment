@@ -69,7 +69,7 @@
     "message": "Category of the Issue:"
   },
   "placeholderPerformanceDescription": {
-    "message": "Optional comment"
+    "message": "Description"
   },
   "titleInitialPromptIntroduction": {
     "message": "How is your experience with this site in Firefox?"
