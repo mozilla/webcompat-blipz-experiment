@@ -894,11 +894,8 @@ const TabState = (function() {
 }());
 
 async function onWindowChanged(windowId) {
-  // If no window is active now, cancel the current prompt.
-  if (windowId === -1) {
-    cancelCurrentPromptDelay();
-    return;
-  }
+  cancelCurrentPromptDelay();
+  closePageAction();
 
   const tabs = await browser.tabs.query({windowId, active: true});
   if (tabs[0]) {
@@ -947,17 +944,6 @@ async function handleTabChange(tabId, url) {
     try {
       await maybePromptUser(tabId, url);
     } catch (_) { }
-  }
-}
-
-async function onFocusedWindowChanged(windowId) {
-  cancelCurrentPromptDelay();
-  closePageAction();
-
-  const tabs = await browser.tabs.query({active: true, windowId});
-  if (tabs[0] && windowId === tabs[0].windowId) {
-    const {id, url} = tabs[0];
-    handleTabChange(id, url);
   }
 }
 
@@ -1242,7 +1228,6 @@ function activate() {
   browser.windows.onFocusChanged.addListener(onWindowChanged);
   browser.webNavigation.onCommitted.addListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.addListener(onNavigationCompleted);
-  browser.windows.onFocusChanged.addListener(onFocusedWindowChanged);
   browser.study.onEndStudy.addListener(deactivate);
   active = true;
 }
@@ -1270,7 +1255,6 @@ function deactivate(studyEndInfo = {}) {
   browser.windows.onFocusChanged.removeListener(onWindowChanged);
   browser.webNavigation.onCommitted.removeListener(onNavigationCommitted);
   browser.webNavigation.onCompleted.removeListener(onNavigationCompleted);
-  browser.windows.onFocusChanged.removeListener(onFocusedWindowChanged);
   if (studyEndInfo.shouldUninstall) {
     browser.management.uninstallSelf();
   }

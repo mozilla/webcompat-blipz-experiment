@@ -9,11 +9,11 @@
 ChromeUtils.defineModuleGetter(this, "PageActions",
                                      "resource:///modules/PageActions.jsm");
 
-ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
-                                     "resource:///modules/BrowserWindowTracker.jsm");
-
 ChromeUtils.defineModuleGetter(this, "RecentWindow",
                                      "resource:///modules/RecentWindow.jsm");
+
+ChromeUtils.defineModuleGetter(this, "PanelMultiView",
+                                     "resource:///modules/PanelMultiView.jsm");
 
 class PageActionPanelNodeManager {
   constructor(pageAction) {
@@ -90,6 +90,8 @@ this.pageActionExtras = class extends ExtensionAPI {
     const extension = context.extension;
     const pageActionAPI = extension.apiManager.getAPI("pageAction", extension,
                                                       context.envType);
+    const {Management: {global: {windowTracker}}} =
+                ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
     const actionId = makeWidgetId(extension.id);
     const action = PageActions.actionForID(actionId);
     const panelNode = new PageActionPanelNodeManager(action);
@@ -97,10 +99,27 @@ this.pageActionExtras = class extends ExtensionAPI {
       experiments: {
         pageAction: {
           async forceOpenPopup() {
-            try {
-              pageActionAPI.handleClick(BrowserWindowTracker.getTopWindow());
-            } catch (e) {
-              pageActionAPI.handleClick(RecentWindow.getMostRecentBrowserWindow());
+            const win = windowTracker.topWindow;
+            if (win) {
+              pageActionAPI.handleClick(win);
+              if (pageActionAPI.popupNode) {
+                const panel = pageActionAPI.popupNode.panel;
+
+                // For some reason, sometimes the popup is mysteriously hidden
+                // again right away upon opening, without its hidePopup() method
+                // being called, just a popuphiding event being triggered. This
+                // also makes handleClick() throw errors (#192). To prevent it
+                // from happening, I cancel any popuphiding events on the popup
+                // which happen just after the popup opens.
+                const ignoreSpuriousPopupHidingEvent = event => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                };
+                panel.addEventListener("popuphiding", ignoreSpuriousPopupHidingEvent, {once: true});
+                win.setTimeout(() => {
+                  panel.removeEventListener("popuphiding", ignoreSpuriousPopupHidingEvent, {once: true});
+                }, 500);
+              }
             }
           },
           async concealFromPanel() {
