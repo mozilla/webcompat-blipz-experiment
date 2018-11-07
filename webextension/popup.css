@@ -423,6 +423,8 @@ section > h1 + button:only-of-type {
 button[data-action="back"] {
   background-image: url(icons/back.svg);
   background-size: 12px 12px;
+  position: absolute;
+  z-index: 1000;
 }
 
 #feedbackDetails .screenshot {
