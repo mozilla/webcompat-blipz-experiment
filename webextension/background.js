@@ -895,7 +895,7 @@ const TabState = (function() {
 
 async function onWindowChanged(windowId) {
   cancelCurrentPromptDelay();
-  closePageAction();
+  await closePageAction();
 
   const tabs = await browser.tabs.query({windowId, active: true});
   if (tabs[0]) {
@@ -1448,12 +1448,13 @@ async function popupPageAction(tabId) {
     tabState.isTakingScreenshot = false;
     selectorLoader.unloadIfLoaded(tabId);
   }
+  await closePageAction();
   return browser.experiments.pageAction.forceOpenPopup();
 }
 
-function closePageAction() {
+async function closePageAction() {
   if (portToPageAction.isConnected()) {
-    portToPageAction.send("closePopup").catch(() => {});
+    await portToPageAction.send("closePopup").catch(() => {});
   }
 }
 
