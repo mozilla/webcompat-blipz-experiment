@@ -748,7 +748,7 @@ const TabState = (function() {
       // not the first time the popup is brought up, but also when
       // they call up the popup themselves (but not if they're
       // coming back after clicking an internal link/screenshot).
-      if (!this.takenPageActionExit) {
+      if (!this.takenPageActionExit || this.takenPageActionExit === "done") {
         const selfPrompted = this.userPrompted ? "no" : "yes";
         this.maybeSendTelemetry({selfPrompted});
       }
@@ -895,7 +895,7 @@ const TabState = (function() {
 
 async function onWindowChanged(windowId) {
   cancelCurrentPromptDelay();
-  closePageAction();
+  await closePageAction();
 
   const tabs = await browser.tabs.query({windowId, active: true});
   if (tabs[0]) {
@@ -1278,11 +1278,13 @@ function hidePageActionOnEveryTab() {
 function handleCancelAction(command, tabState) {
   if (command === "cancel") {
     closePageAction();
-    tabState.markAsVerified();
     tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
     if (Config.neverShowAgain) {
       endStudyAndDeactivate();
+      return;
     }
+    tabState.reset();
+    tabState.markAsVerified();
   }
 }
 
@@ -1446,12 +1448,13 @@ async function popupPageAction(tabId) {
     tabState.isTakingScreenshot = false;
     selectorLoader.unloadIfLoaded(tabId);
   }
+  await closePageAction();
   return browser.experiments.pageAction.forceOpenPopup();
 }
 
-function closePageAction() {
+async function closePageAction() {
   if (portToPageAction.isConnected()) {
-    portToPageAction.send("closePopup").catch(() => {});
+    await portToPageAction.send("closePopup").catch(() => {});
   }
 }
 
