@@ -1278,11 +1278,13 @@ function hidePageActionOnEveryTab() {
 function handleCancelAction(command, tabState) {
   if (command === "cancel") {
     closePageAction();
-    tabState.markAsVerified();
     tabState.maybeSendTelemetry({shareFeedBack: "userCancelled"});
     if (Config.neverShowAgain) {
       endStudyAndDeactivate();
+      return;
     }
+    tabState.reset();
+    tabState.markAsVerified();
   }
 }
 
