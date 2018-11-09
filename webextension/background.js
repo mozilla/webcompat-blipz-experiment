@@ -748,7 +748,7 @@ const TabState = (function() {
       // not the first time the popup is brought up, but also when
       // they call up the popup themselves (but not if they're
       // coming back after clicking an internal link/screenshot).
-      if (!this.takenPageActionExit) {
+      if (!this.takenPageActionExit || this.takenPageActionExit === "done") {
         const selfPrompted = this.userPrompted ? "no" : "yes";
         this.maybeSendTelemetry({selfPrompted});
       }
