@@ -17,8 +17,26 @@ const Config = (function() {
     "reportEndpoint", "variation", "firstRunTimestamp"
   ]);
 
-  const UIVariants = ["little-sentiment", "more-sentiment",
-                      "control", "v1-more-context"];
+  const UIVariants = [
+    {
+      name: "little-sentiment",
+      weight: 1,
+    },
+    {
+      name: "more-sentiment",
+      weight: 1,
+    },
+    {
+      name: "control",
+      weight: 1,
+    },
+    {
+      name: "v1-more-context",
+      weight: 2,
+    },
+  ];
+
+  const UIVariantNames = UIVariants.map(variant => variant.name);
 
   class Config {
     constructor() {
@@ -115,7 +133,7 @@ const Config = (function() {
 
     async _onVariationPrefChanged(variationPref) {
       // Users may set to an invalid value to request the addon to reset its state.
-      const isResetRequest = variationPref === undefined || !UIVariants.includes(variationPref);
+      const isResetRequest = variationPref === undefined || !UIVariantNames.includes(variationPref);
 
       // If the variation pref is actually present, we are in testing mode.
       this._testingMode = variationPref !== undefined;
@@ -190,9 +208,7 @@ const Config = (function() {
             category: "ended-neutral",
           },
         },
-        weightedVariations: UIVariants.map(name => {
-          return {name, weight: 1};
-        }),
+        weightedVariations: UIVariants,
         expire: {
           days: 100000000, // We handle expiry ourselves via browser.alarm (#108)
         },
@@ -272,7 +288,7 @@ const Config = (function() {
         // Testers may override the variation we are using with the pref.
         // They may use an invalid value to request for the addon to reset its state.
         if (variationPref !== undefined) {
-          if (UIVariants.includes(variationPref)) {
+          if (UIVariantNames.includes(variationPref)) {
             delete otherPrefs.uiVariant;
           } else {
             otherPrefs = {};
