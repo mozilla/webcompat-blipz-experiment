@@ -1296,27 +1296,29 @@ async function handleButtonClick(command, tabState) {
 }
 
 SlideButtonClickHandlers.initialPrompt = (command, tabState) => {
+  const domain = new URL(tabState._url).host;
   if (command === "yes") {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes"});
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes", domain});
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
   } else {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no", domain});
     tabState.slide = "performancePrompt";
   }
   handleCancelAction(command, tabState);
 };
 
 SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
+  const domain = new URL(tabState._url).host;
   if (command === "yes") {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes"});
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "yes", domain});
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
   } else if (command === "slow") {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "slow"});
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "slow", domain});
     tabState.slide = "performanceFeedback";
   } else if (command === "no") {
-    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no"});
+    tabState.maybeSendTelemetry({satisfiedSitePrompt: "no", domain});
     if (!tabState.screenshot) {
       loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
     }
@@ -1326,11 +1328,12 @@ SlideButtonClickHandlers.initialPromptSentiment = (command, tabState) => {
 };
 
 SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
+  const domain = new URL(tabState._url).host;
   if (command === "performanceIssue") {
-    tabState.maybeSendTelemetry({slowOrSomethingElse: "slow"});
+    tabState.maybeSendTelemetry({slowOrSomethingElse: "slow", domain});
     tabState.slide = "performanceFeedback";
   } else if (command === "somethingElse") {
-    tabState.maybeSendTelemetry({slowOrSomethingElse: "somethingElse"});
+    tabState.maybeSendTelemetry({slowOrSomethingElse: "somethingElse", domain});
     if (!tabState.screenshot) {
       loadScreenshotUI((gCurrentlyPromptingTab || {}).id, tabState);
     }
