@@ -12,6 +12,9 @@ let gCurrentlyPromptingTab;
 
 let gCancelCurrentPromptDelayCallback;
 
+let BlipzVersion = "";
+browser.management.getSelf().then(info => BlipzVersion = info.version);
+
 const Config = (function() {
   browser.experiments.aboutConfigPrefs.clearPrefsOnUninstall([
     "reportEndpoint", "variation", "firstRunTimestamp"
@@ -803,7 +806,7 @@ const TabState = (function() {
       const report = {
         title: `${domain} - ${typeLabel}`,
         body,
-        labels: [`variant-${data.experimentBranch}`],
+        labels: [`variant-${data.experimentBranch}`, `blipz-${BlipzVersion}`],
       };
 
       if (data.description === "Site is slow") {
