@@ -88,8 +88,6 @@ function makeWidgetId(id) {
 this.pageActionExtras = class extends ExtensionAPI {
   getAPI(context) {
     const extension = context.extension;
-    const pageActionAPI = extension.apiManager.getAPI("pageAction", extension,
-                                                      context.envType);
     const {Management: {global: {windowTracker}}} =
                 ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
     const actionId = makeWidgetId(extension.id);
@@ -101,6 +99,8 @@ this.pageActionExtras = class extends ExtensionAPI {
           async forceOpenPopup() {
             const win = windowTracker.topWindow;
             if (win) {
+              const pageActionAPI = extension.apiManager.getAPI(
+                "pageAction", extension, context.envType);
               pageActionAPI.handleClick(win);
               if (pageActionAPI.popupNode) {
                 const panel = pageActionAPI.popupNode.panel;
