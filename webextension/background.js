@@ -1381,6 +1381,8 @@ SlideButtonClickHandlers.performanceFeedback = (command, tabState) => {
 
 SlideButtonClickHandlers.problemReport = (command, tabState) => {
   if (command === "submitProblemReport") {
+    const reportType = tabState._report.feedbackCategories;
+    tabState.updateReport({type: reportType});
     tabState.submitReport();
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
