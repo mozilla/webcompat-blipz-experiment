@@ -65,6 +65,9 @@
   "issueLabelOther": {
     "message": "Something else"
   },
+  "issueLabelSiteIsSlow": {
+    "message": "Site is slow"
+  },
   "labelNeverShowAgain": {
     "message": "Don't show this again"
   },
