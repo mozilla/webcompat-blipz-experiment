@@ -809,7 +809,7 @@ const TabState = (function() {
         labels: [`variant-${data.experimentBranch}`, `blipz-${BlipzVersion}`],
       };
 
-      if (data.description === "Site is slow") {
+      if (data.type === "siteIsSlow") {
         report.labels.push("slow-site");
       }
 
@@ -1365,7 +1365,11 @@ SlideButtonClickHandlers.performancePrompt = (command, tabState) => {
 
 SlideButtonClickHandlers.performanceFeedback = (command, tabState) => {
   if (command === "submitPerformanceFeedback") {
-    tabState.updateReport({description: "Site is slow"});
+    // Clear the report and submit only the "it's slow" feedback. Otherwise
+    // we might have details from "something else" if the user clicked back.
+    const description = tabState._report.performanceDescription;
+    tabState.updateReport();
+    tabState.updateReport({type: "siteIsSlow", description});
     tabState.submitReport();
     tabState.slide = "thankYouFeedback";
     tabState.markAsVerified();
