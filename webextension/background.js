@@ -794,7 +794,8 @@ const TabState = (function() {
       const typeLabel = browser.i18n.getMessage(`issueLabel${data.type}`);
 
       const body = ["url", "appVersion", "channel", "platform", "buildID",
-                    "experimentBranch", "description", "type"].map(function(name) {
+                    "experimentBranch", "description", "type",
+                    "feedbackCategories", "performanceDescription"].map(function(name) {
           const label = browser.i18n.getMessage(`detailLabel_${name}`);
           const value = data[name] || "";
           return `**${label}** ${value}`;

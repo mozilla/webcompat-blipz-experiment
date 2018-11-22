@@ -44,6 +44,12 @@
   "detailLabel_url": {
     "message": "URL:"
   },
+  "detailLabel_feedbackCategories": {
+    "message": "Feedback Category:"
+  },
+  "detailLabel_performanceDescription": {
+    "message": "Performance issue:"
+  },
   "back": {
     "message": "Back"
   },
