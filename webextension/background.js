@@ -335,7 +335,7 @@ const Config = (function() {
       return Promise.all(promises);
     }
 
-    onUserPrompted(url) {
+    onUserAutoPrompted(url) {
       const domain = this.findDomainMatch(new URL(url).host);
       if (!domain) {
         return;
@@ -1088,14 +1088,16 @@ function cancelCurrentPromptDelay() {
   }
 }
 
-async function promptUser(tabId, url) {
+async function promptUser(tabId, url, selfPrompted = false) {
   url = url || await browser.tabs.get(tabId).url;
   gCurrentlyPromptingTab = {id: tabId, url};
   await updatePageActionIcon(tabId);
   await browser.pageAction.show(tabId);
   popupPageAction(tabId);
-  (await TabState.get(tabId)).updateReport({userPrompted: true});
-  Config.onUserPrompted(url);
+  if (!selfPrompted) {
+    (await TabState.get(tabId)).updateReport({userPrompted: true});
+    Config.onUserAutoPrompted(url);
+  }
 }
 
 function hideRealScreenshotsUI(tabId) {
@@ -1495,6 +1497,6 @@ browser.commands.onCommand.addListener(async command => {
   if (command === "show-popup" && Config.testingMode) {
     cancelCurrentPromptDelay();
     const {id, url} = await getActiveTab();
-    promptUser(id, url);
+    promptUser(id, url, true);
   }
 });
