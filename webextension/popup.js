@@ -148,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const message = {};
         message.type = gState.type = input.value;
         portToBGScript.send(message);
+        form.classList.remove("invalid");
       }
     });
   });
@@ -398,8 +399,7 @@ function handleClick(e) {
       // if the form isn't on this slide, don't worry about it.
       if (gState.slide === form.closest("section").id) {
         if (!form.checkValidity()) {
-          // force the first invalid element to be highlighted.
-          form.querySelector(":invalid").value = "";
+          form.classList.add("invalid");
           return;
         }
         for (const field of form.querySelectorAll("[name]")) {

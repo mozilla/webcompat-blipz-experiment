@@ -701,3 +701,7 @@ button[data-action="back"] {
 #feedbackDetailsV1 td {
   flex-grow: 1;
 }
+#feedbackFormV1 > form.invalid > select,
+#problemReportForm.invalid > span {
+  box-shadow: 0 0 1.5px 1px red;
+}
